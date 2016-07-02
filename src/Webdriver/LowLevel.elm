@@ -93,6 +93,6 @@ url =
 
 {-| Clicks the element after finding it with the given selector.
 -}
-click : String -> Browser -> Task Error String
+click : String -> Browser -> Task Error ()
 click =
     Native.Webdriver.click

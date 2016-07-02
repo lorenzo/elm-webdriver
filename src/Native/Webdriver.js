@@ -6,6 +6,7 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
   var succeed = _elm_lang$core$Native_Scheduler.succeed;
   var fail = _elm_lang$core$Native_Scheduler.fail;
   var tuple2 = _elm_lang$core$Native_Utils.Tuple2;
+  var unit = {ctor: '_Tuple0'};
 
   function open(options) {
     return nativeBinding(function (callback) {
@@ -38,7 +39,7 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
   function click(selector, client) {
     return nativeBinding(function (callback) {
       client.click(selector).then(function (a) {
-        callback(succeed("a"));
+        callback(succeed(unit));
       })
       .catch(function (error) {
         handleError(error, callback, {selector: selector});
