@@ -2,15 +2,13 @@ port module Main exposing (..)
 
 import Html
 import Html.App as App
-import Webdriver as Wd exposing (open, visit, click, close, setValue)
-import Webdriver.LowLevel as W exposing (basicOptions)
-import Task
+import Webdriver as W exposing (..)
 
 
 main : Program Never
 main =
     App.program
-        { init = ( Nothing, actions ) ! []
+        { init = initModel ! []
         , update = update
         , view = \_ -> Html.text "it works!"
         , subscriptions = subscriptions
@@ -18,61 +16,51 @@ main =
 
 
 type alias Model =
-    ( Maybe W.Browser, List Action )
+    { session : W.Model
+    }
 
 
 type Msg
     = NoOp
-    | Start
-    | Opened W.Browser
-    | Process
-    | OnError W.Error
+    | Webdriver W.Msg
 
 
-type Action
-    = Visit String
-    | Click String
-    | SetValue String String
-    | Close
+initModel : Model
+initModel =
+    { session = init actions
+    }
 
 
+actions : List Action
 actions =
-    [ Visit "https://bownty.dk"
-    , SetValue "#signUpOverlay .email" "foo@bar.com"
-    , Click "#signUpOverlay > div > button"
-    , Close
+    [ visit "https://bownty.dk/go/62964387"
+    , click "#tilbudibyen_c1_right_box_bottom_btn_buy"
+    , click "//*[@id=\"header_buttons_box\"]/div[3]/div/button"
+    , setValue "#login_username" "jon@gmail.com"
+    , setValue "#login_password" "tib251"
+    , submitForm ".loginForm"
+    , visit "http://tilbudibyen.dk/basket"
+    , setValue "#firstname" "Jon"
+    , setValue "#lastname" "Snow"
+    , setValue "#address_number" "5"
+    , setValue "#postal_code" "2300"
+    , setValue "#mobile" "31755599"
+    , close
     ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case ( model, msg ) of
-        ( _, Start ) ->
-            ( model, open basicOptions OnError Opened )
+    case msg of
+        Webdriver action ->
+            let
+                ( session, next ) =
+                    W.update action model.session
+            in
+                ( { model | session = session }, Cmd.map Webdriver next )
 
-        ( ( _, actions ), Opened browser ) ->
-            ( ( Just browser, actions ), Task.perform (always NoOp) (always Process) (Task.succeed ()) )
-
-        ( ( Just browser, action :: rest ), Process ) ->
-            ( ( Just browser, rest ), process action browser )
-
-        ( _, _ ) ->
+        NoOp ->
             ( model, Cmd.none )
-
-
-process action browser =
-    case action of
-        Visit url ->
-            visit url OnError (always Process) browser
-
-        Click selector ->
-            click selector OnError (always Process) browser
-
-        SetValue selector value ->
-            setValue selector value OnError (always Process) browser
-
-        Close ->
-            close OnError (always Process) browser
 
 
 
@@ -84,4 +72,4 @@ port begin : (String -> msg) -> Sub msg
 
 subscriptions : model -> Sub Msg
 subscriptions _ =
-    begin (always Start)
+    begin (always <| Webdriver (open basicOptions))

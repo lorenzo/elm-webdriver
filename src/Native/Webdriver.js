@@ -8,6 +8,15 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
   var tuple2 = _elm_lang$core$Native_Utils.Tuple2;
   var unit = {ctor: '_Tuple0'};
 
+  function unitReturningExecute(callback, promise, context) {
+      promise.then(function (a) {
+        callback(succeed(unit));
+      })
+      .catch(function (error) {
+        handleError(error, callback, context);
+      });
+  }
+
   function open(options) {
     return nativeBinding(function (callback) {
       webdriverio.remote(options).init().then(function (browser) {
@@ -37,39 +46,45 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
   }
 
   function click(selector, client) {
-    return nativeBinding(function (callback) {
-      client.click(selector).then(function (a) {
-        callback(succeed(unit));
-      })
-      .catch(function (error) {
-        handleError(error, callback, {selector: selector});
-        client.close();
-      })
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.click(selector), {selector: selector});
     });
   }
 
   function close(client) {
-    return nativeBinding(function (callback) {
-      client.close()
-      .then(function () {
-        callback(succeed(unit));
-      })
-      .catch(function (error) {
-        handleError(error, callback, {});
-      });
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.close(), {});
     });
   }
 
+
   function setValue(selector, value, client) {
-    return nativeBinding(function (callback) {
-      client
-      .setValue(selector, value)
-      .then(function () {
-        callback(succeed(unit));
-      })
-      .catch(function (error) {
-        handleError(error, callback, {selector: selector});
-      });
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.setValue(selector, value), {selector: selector});
+    });
+  }
+
+  function selectByIndex(selector, index, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.selectByIndex(selector, index), {selector: selector});
+    });
+  }
+
+  function selectByValue(selector, value, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.selectByValue(selector, value), {selector: selector});
+    });
+  }
+
+  function selectByText(selector, text, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.selectByVisibleText(selector, text), {selector: selector});
+    });
+  }
+
+  function submitForm(selector, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.submitForm(selector), {selector: selector});
     });
   }
 
@@ -103,6 +118,10 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     url: F2(url),
     click: F2(click),
     close: close,
-    setValue: F3(setValue)
+    setValue: F3(setValue),
+    selectByIndex: F3(selectByIndex),
+    selectByValue: F3(selectByValue),
+    selectByText: F3(selectByText),
+    submitForm: F2(submitForm),
   };
 }();

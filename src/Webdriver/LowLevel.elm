@@ -4,18 +4,22 @@ module Webdriver.LowLevel
         , Options
         , Capabilities
         , Error(..)
-        , basicOptions
         , open
         , url
         , click
         , close
         , setValue
+        , selectByIndex
+        , selectByValue
+        , selectByText
+        , submitForm
         )
 
 {-| Offers access to the webdriver.io js library
 
 # API
-@docs basicOptions, open, url, click, close, setValue
+@docs open, url, click, close
+@docs selectByIndex, selectByValue, selectByText, setValue, submitForm
 @docs Error, Browser, Options, Capabilities
 -}
 
@@ -67,16 +71,6 @@ type alias ErrorDetails a =
     }
 
 
-{-| Bare minimum options for running selenium
--}
-basicOptions : Options
-basicOptions =
-    { desiredCapabilities =
-        { browserName = "firefox"
-        }
-    }
-
-
 {-| Opens a new browser window
 -}
 open : Options -> Task Error ( String, Browser )
@@ -112,3 +106,31 @@ close =
 setValue : String -> String -> Browser -> Task Error ()
 setValue =
     Native.Webdriver.setValue
+
+
+{-| Selects the option in the dropdown using the option index
+-}
+selectByIndex : String -> Int -> Browser -> Task Error ()
+selectByIndex =
+    Native.Webdriver.selectByIndex
+
+
+{-| Selects the option in the dropdown using the option value
+-}
+selectByValue : String -> String -> Browser -> Task Error ()
+selectByValue =
+    Native.Webdriver.selectByValue
+
+
+{-| Selects the option in the dropdown using the option visible text
+-}
+selectByText : String -> String -> Browser -> Task Error ()
+selectByText =
+    Native.Webdriver.selectByText
+
+
+{-| Submits the form with the given selector
+-}
+submitForm : String -> Browser -> Task Error ()
+submitForm =
+    Native.Webdriver.submitForm
