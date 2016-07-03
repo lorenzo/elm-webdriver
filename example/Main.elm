@@ -2,7 +2,7 @@ port module Main exposing (..)
 
 import Html
 import Html.App as App
-import Webdriver as Wd exposing (open, visit, click)
+import Webdriver as Wd exposing (open, visit, click, close, setValue)
 import Webdriver.LowLevel as W exposing (basicOptions)
 import Task
 
@@ -32,11 +32,15 @@ type Msg
 type Action
     = Visit String
     | Click String
+    | SetValue String String
+    | Close
 
 
 actions =
     [ Visit "https://bownty.dk"
+    , SetValue "#signUpOverlay .email" "foo@bar.com"
     , Click "#signUpOverlay > div > button"
+    , Close
     ]
 
 
@@ -63,6 +67,12 @@ process action browser =
 
         Click selector ->
             click selector OnError (always Process) browser
+
+        SetValue selector value ->
+            setValue selector value OnError (always Process) browser
+
+        Close ->
+            close OnError (always Process) browser
 
 
 

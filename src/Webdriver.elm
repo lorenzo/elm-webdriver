@@ -3,11 +3,13 @@ module Webdriver
         ( open
         , visit
         , click
+        , close
+        , setValue
         )
 
 {-| A library to interface with Webdriver.io and produce commands
 
-@docs open, visit, click
+@docs open, visit, click, close, setValue
 -}
 
 import Webdriver.LowLevel as Wd exposing (Error, Browser, Options)
@@ -35,3 +37,19 @@ visit url onError onSuccess browser =
 click : String -> (Error -> msg) -> (() -> msg) -> Browser -> Cmd msg
 click selector onError onSuccess browser =
     perform onError onSuccess (Wd.click selector browser)
+
+
+{-| Close the current browser window
+-}
+close : (Error -> msg) -> (() -> msg) -> Browser -> Cmd msg
+close onError onSuccess browser =
+    perform onError onSuccess (Wd.close browser)
+
+
+{-| Fills in the specified input with the give value
+
+    setValue "#email" "foo@bar.com" OnError Success browser
+-}
+setValue : String -> String -> (Error -> msg) -> (() -> msg) -> Browser -> Cmd msg
+setValue selector value onError onSuccess browser =
+    perform onError onSuccess (Wd.setValue selector value browser)

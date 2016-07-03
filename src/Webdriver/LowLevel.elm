@@ -8,12 +8,14 @@ module Webdriver.LowLevel
         , open
         , url
         , click
+        , close
+        , setValue
         )
 
 {-| Offers access to the webdriver.io js library
 
 # API
-@docs basicOptions, open, url, click
+@docs basicOptions, open, url, click, close, setValue
 @docs Error, Browser, Options, Capabilities
 -}
 
@@ -96,3 +98,17 @@ url =
 click : String -> Browser -> Task Error ()
 click =
     Native.Webdriver.click
+
+
+{-| Closes the current browser window
+-}
+close : Browser -> Task Error ()
+close =
+    Native.Webdriver.close
+
+
+{-| Fills in the specified input with a value
+-}
+setValue : String -> String -> Browser -> Task Error ()
+setValue =
+    Native.Webdriver.setValue

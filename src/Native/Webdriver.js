@@ -48,6 +48,31 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     });
   }
 
+  function close(client) {
+    return nativeBinding(function (callback) {
+      client.close()
+      .then(function () {
+        callback(succeed(unit));
+      })
+      .catch(function (error) {
+        handleError(error, callback, {});
+      });
+    });
+  }
+
+  function setValue(selector, value, client) {
+    return nativeBinding(function (callback) {
+      client
+      .setValue(selector, value)
+      .then(function () {
+        callback(succeed(unit));
+      })
+      .catch(function (error) {
+        handleError(error, callback, {selector: selector});
+      });
+    });
+  }
+
   function handleError(error, callback, context) {
     var tag = {
       ctor: 'UnknownError',
@@ -76,6 +101,8 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
   return {
     open: open,
     url: F2(url),
-    click: F2(click)
+    click: F2(click),
+    close: close,
+    setValue: F3(setValue)
   };
 }();
