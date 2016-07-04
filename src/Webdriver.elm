@@ -18,7 +18,17 @@ module Webdriver
         , selectByText
         , submitForm
         , waitForExist
+        , waitForNotExist
         , waitForVisible
+        , waitForNotVisible
+        , waitForValue
+        , waitForNoValue
+        , waitForSelected
+        , waitForNotSelected
+        , waitForText
+        , waitForNoText
+        , waitForEnabled
+        , waitForNotEnabled
         )
 
 {-| A library to interface with Webdriver.io and produce commands
@@ -28,7 +38,18 @@ module Webdriver
 @docs selectByIndex, selectByValue, selectByText
 
 # Waiting
-@docs waitForExist, waitForVisible
+@docs waitForExist
+    , waitForNotExist
+    , waitForVisible
+    , waitForNotVisible
+    , waitForValue
+    , waitForNoValue
+    , waitForSelected
+    , waitForNotSelected
+    , waitForText
+    , waitForNoText
+    , waitForEnabled
+    , waitForNotEnabled
 -}
 
 import Webdriver.LowLevel as Wd exposing (Error, Browser, Options)
@@ -103,8 +124,34 @@ update msg model =
         ( ( Just browser, action :: rest ), Process ) ->
             ( ( Just browser, rest ), process action browser )
 
+        ( ( Just browser, actions ), OnError error ) ->
+            let
+                message =
+                    handleError error
+            in
+                ( ( Nothing, actions ), Wd.close browser |> toCmd )
+
         ( _, _ ) ->
             ( model, Cmd.none )
+
+
+handleError : Wd.Error -> String
+handleError error =
+    case error of
+        Wd.ConnectionError { message } ->
+            Debug.log "Could not connect to server" message
+
+        Wd.MissingElement { message, selector } ->
+            Debug.log "The element you are trying to reach is missing" message
+
+        Wd.UnreachableElement { message, selector } ->
+            Debug.log "The element you are trying to reach is not visible" message
+
+        Wd.FailedElementPrecondition { message, selector } ->
+            Debug.log "You were waiting for an element, but it is not as you expected" message
+
+        Wd.UnknownError { message } ->
+            Debug.log "Oops, something wrong happened" message
 
 
 (&>) : Task x y -> Task x z -> Task x z
@@ -114,13 +161,13 @@ update msg model =
 
 autoWait : Selector -> Wd.Browser -> Task Wd.Error ()
 autoWait selector browser =
-    Wd.waitForVisible selector 1000 browser
+    Wd.waitForVisible selector 2000 browser
 
 
 inputAutoWait : Selector -> Wd.Browser -> Task Wd.Error ()
 inputAutoWait selector browser =
     autoWait selector browser
-        &> Wd.waitForEnabled selector 1000 browser
+        &> Wd.waitForEnabled selector 2000 browser
 
 
 process : Action -> Wd.Browser -> Cmd Msg

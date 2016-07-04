@@ -32,7 +32,6 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
           callback(succeed(url));
         })
         .catch(function (error) {
-          client.close();
           callback(fail({
             ctor: 'ConnectionError',
             _0: {
