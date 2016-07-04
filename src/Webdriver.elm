@@ -107,6 +107,22 @@ update msg model =
             ( model, Cmd.none )
 
 
+(&>) : Task x y -> Task x z -> Task x z
+(&>) t1 t2 =
+    t1 `Task.andThen` \_ -> t2
+
+
+autoWait : Selector -> Wd.Browser -> Task Wd.Error ()
+autoWait selector browser =
+    Wd.waitForVisible selector 1000 browser
+
+
+inputAutoWait : Selector -> Wd.Browser -> Task Wd.Error ()
+inputAutoWait selector browser =
+    autoWait selector browser
+        &> Wd.waitForEnabled selector 1000 browser
+
+
 process : Action -> Wd.Browser -> Cmd Msg
 process action browser =
     case action of
@@ -115,31 +131,38 @@ process action browser =
                 |> toCmd
 
         Click selector ->
-            Wd.click selector browser
+            autoWait selector browser
+                &> Wd.click selector browser
                 |> toCmd
 
         SetValue selector value ->
-            Wd.setValue selector value browser
+            inputAutoWait selector browser
+                &> Wd.setValue selector value browser
                 |> toCmd
 
         AppendValue selector value ->
-            Wd.appendValue selector value browser
+            inputAutoWait selector browser
+                &> Wd.appendValue selector value browser
                 |> toCmd
 
         ClearValue selector ->
-            Wd.clearValue selector browser
+            inputAutoWait selector browser
+                &> Wd.clearValue selector browser
                 |> toCmd
 
         SelectByValue selector value ->
-            Wd.selectByValue selector value browser
+            inputAutoWait selector browser
+                &> Wd.selectByValue selector value browser
                 |> toCmd
 
         SelectByIndex selector index ->
-            Wd.selectByIndex selector index browser
+            inputAutoWait selector browser
+                &> Wd.selectByIndex selector index browser
                 |> toCmd
 
         SelectByText selector text ->
-            Wd.selectByText selector text browser
+            inputAutoWait selector browser
+                &> Wd.selectByText selector text browser
                 |> toCmd
 
         Submit selector ->
