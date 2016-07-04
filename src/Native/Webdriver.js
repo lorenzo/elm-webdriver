@@ -64,6 +64,18 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     });
   }
 
+  function addValue(selector, value, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.addValue(selector, value), {selector: selector});
+    });
+  }
+
+  function clearElement(selector, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.clearElement(selector), {selector: selector});
+    });
+  }
+
   function selectByIndex(selector, index, client) {
     return nativeBinding(function (c) {
       unitReturningExecute(c, client.selectByIndex(selector, index), {selector: selector});
@@ -88,6 +100,43 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     });
   }
 
+  function waitForExist(selector, ms, reverse, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.waitForExist(selector, ms, reverse), {selector: selector});
+    });
+  }
+
+  function waitForVisible(selector, ms, reverse, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.waitForVisible(selector, ms, reverse), {selector: selector});
+    });
+  }
+
+  function waitForText(selector, ms, reverse, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.waitForText(selector, ms, reverse), {selector: selector});
+    });
+  }
+
+
+  function waitForSelected(selector, ms, reverse, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.waitForSelected(selector, ms, reverse), {selector: selector});
+    });
+  }
+
+  function waitForValue(selector, ms, reverse, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.waitForValue(selector, ms, reverse), {selector: selector});
+    });
+  }
+
+  function waitForEnabled(selector, ms, reverse, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.waitForEnabled(selector, ms, reverse), {selector: selector});
+    });
+  }
+
   function handleError(error, callback, context) {
     var tag = {
       ctor: 'UnknownError',
@@ -100,16 +149,19 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     switch (error.type) {
         case "NoSuchElement" :
             tag.ctor = 'MissingElement';
-            tag._0 = Object.assign(tag._0, context);
+            break;
+
+        case "WaitUntilTimeoutError" :
+            tag.ctor = 'FailedElementPrecondition';
             break;
         case "RuntimeError" :
             if (error.message.indexOf("Element is not clickable") === 0) {
               tag.ctor = 'UnreachableElement';
             }
             tag._0.screenshot = error.screenshot;
-            tag._0 = Object.assign(tag._0, context);
     }
 
+    tag._0 = Object.assign(tag._0, context);
     callback(fail(tag));
   }
 
@@ -119,9 +171,17 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     click: F2(click),
     close: close,
     setValue: F3(setValue),
+    addValue: F3(addValue),
+    clearValue: F2(clearElement),
     selectByIndex: F3(selectByIndex),
     selectByValue: F3(selectByValue),
     selectByText: F3(selectByText),
     submitForm: F2(submitForm),
+    waitForExist: F4(waitForExist),
+    waitForValue: F4(waitForValue),
+    waitForSelected: F4(waitForSelected),
+    waitForText: F4(waitForText),
+    waitForVisible: F4(waitForVisible),
+    waitForEnabled: F4(waitForEnabled)
   };
 }();
