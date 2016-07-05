@@ -10,6 +10,7 @@ module Webdriver
         , visit
         , click
         , close
+        , end
         , setValue
         , appendValue
         , clearValue
@@ -29,15 +30,27 @@ module Webdriver
         , waitForNoText
         , waitForEnabled
         , waitForNotEnabled
+        , waitForDebug
+        , pause
+        , scrollToElement
+        , scrollToElementOffset
+        , scrollWindow
+        , savePageScreenshot
+        , switchToFrame
+        , triggerClick
         )
 
 {-| A library to interface with Webdriver.io and produce commands
 
 @docs basicOptions, init, update, Model, Msg, Action
-@docs open, visit, click, close, setValue, appendValue, clearValue, submitForm
+@docs open, visit, click, close, end, switchToFrame
+
+## Forms
+
+@docs setValue, appendValue, clearValue, submitForm
 @docs selectByIndex, selectByValue, selectByText
 
-# Waiting
+## Waiting
 @docs waitForExist
     , waitForNotExist
     , waitForVisible
@@ -50,6 +63,25 @@ module Webdriver
     , waitForNoText
     , waitForEnabled
     , waitForNotEnabled
+    , pause
+
+## Debugging
+
+@docs waitForDebug
+
+## Scrolling
+
+@docs scrollToElement
+    , scrollToElementOffset
+    , scrollWindow
+
+## Screenshots
+
+@docs savePageScreenshot
+
+## Custom
+
+@docs triggerClick
 -}
 
 import Webdriver.LowLevel as Wd exposing (Error, Browser, Options)
@@ -84,7 +116,15 @@ type Action
     | WaitForNoText Selector Int
     | WaitForEnabled Selector Int
     | WaitForNotEnabled Selector Int
+    | WaitForDebug
+    | Pause Int
+    | ScrollTo Selector Int Int
+    | Scroll Int Int
+    | SavePagecreenshot String
+    | SwitchFrame Int
+    | TriggerClick Selector
     | Close
+    | End
 
 
 {-| The internal messages passed in this module
@@ -121,6 +161,12 @@ update msg model =
         ( ( _, actions ), Initiated browser ) ->
             ( ( Just browser, actions ), perform OnError (always Process) (Task.succeed ()) )
 
+        ( ( Just browser, End :: rest ), Process ) ->
+            ( ( Nothing, [] ), process End browser )
+
+        ( ( Just browser, [] ), Process ) ->
+            ( ( Nothing, [] ), process End browser )
+
         ( ( Just browser, action :: rest ), Process ) ->
             ( ( Just browser, rest ), process action browser )
 
@@ -129,7 +175,7 @@ update msg model =
                 message =
                     handleError error
             in
-                ( ( Nothing, actions ), Wd.close browser |> toCmd )
+                ( ( Nothing, actions ), Wd.end browser |> toCmd )
 
         ( _, _ ) ->
             ( model, Cmd.none )
@@ -262,6 +308,38 @@ process action browser =
 
         WaitForNotEnabled selector timeout ->
             Wd.waitForNotEnabled selector timeout browser
+                |> toCmd
+
+        WaitForDebug ->
+            Wd.debug browser
+                |> toCmd
+
+        Pause timeout ->
+            Wd.pause timeout browser
+                |> toCmd
+
+        Scroll x y ->
+            Wd.scrollWindow x y browser
+                |> toCmd
+
+        ScrollTo selector x y ->
+            Wd.scrollToElementOffset selector x y browser
+                |> toCmd
+
+        SavePagecreenshot filename ->
+            Wd.savePageScreenshot filename browser
+                |> toCmd
+
+        SwitchFrame index ->
+            Wd.switchToFrame index browser
+                |> toCmd
+
+        TriggerClick selector ->
+            Wd.triggerClick selector browser
+                |> toCmd
+
+        End ->
+            Wd.end browser
                 |> toCmd
 
         Close ->
@@ -462,3 +540,71 @@ waitForEnabled selector ms =
 waitForNotEnabled : String -> Int -> Action
 waitForNotEnabled selector ms =
     WaitForNotEnabled selector ms
+
+
+{-| Ends the browser session
+-}
+end : Action
+end =
+    End
+
+
+{-| Pauses the browser session for the given milliseconds
+-}
+pause : Int -> Action
+pause ms =
+    Pause ms
+
+
+{-| Scrolls the window to the element specified in the selector
+-}
+scrollToElement : Selector -> Action
+scrollToElement selector =
+    ScrollTo selector 0 0
+
+
+{-| Scrolls the window to the element specified in the selector and then scrolls
+the given amount of pixels as offset from such element
+-}
+scrollToElementOffset : Selector -> Int -> Int -> Action
+scrollToElementOffset selector x y =
+    ScrollTo selector x y
+
+
+{-| Scrolls the window to the absolute coordinate (x, y) position provided in pixels
+-}
+scrollWindow : Int -> Int -> Action
+scrollWindow x y =
+    Scroll x y
+
+
+{-| Takes a screenshot of the whole page and saves it to a file
+-}
+savePageScreenshot : String -> Action
+savePageScreenshot filename =
+    SavePagecreenshot filename
+
+
+{-| Makes any future actions happen inside the frame specified by its index
+-}
+switchToFrame : Int -> Action
+switchToFrame index =
+    SwitchFrame index
+
+
+{-| Programatically trigger a click in the elements specified in the selector.
+This exists because some pages hijack in an odd way mouse click, and in order to test
+the behavior, it needs to be manually triggered.
+-}
+triggerClick : String -> Action
+triggerClick selector =
+    TriggerClick selector
+
+
+{-| Stops the running queue and gives you time to jump into the browser and
+check the state of your application (e.g. using the dev tools). Once you are done
+go to the command line and press Enter.
+-}
+waitForDebug : Action
+waitForDebug =
+    WaitForDebug

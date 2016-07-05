@@ -9,8 +9,17 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
   var unit = {ctor: '_Tuple0'};
 
   function unitReturningExecute(callback, promise, context) {
-      promise.then(function (a) {
+      promise.then(function () {
         callback(succeed(unit));
+      })
+      .catch(function (error) {
+        handleError(error, callback, context);
+      });
+  }
+
+  function arity1ReturningExecute(callback, promise) {
+      promise.then(function (a) {
+        callback(succeed(a));
       })
       .catch(function (error) {
         handleError(error, callback, context);
@@ -27,10 +36,8 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
 
   function url(address, client) {
     return nativeBinding(function (callback) {
-      client.url(address).getUrl()
-        .then(function (url) {
-          callback(succeed(url));
-        })
+      var promise = client
+        .url(address)
         .catch(function (error) {
           callback(fail({
             ctor: 'ConnectionError',
@@ -41,6 +48,8 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
             _1: error.screenshot,
           }));
         })
+        .getUrl();
+        arity1ReturningExecute(callback, promise, {});
     });
   }
 
@@ -56,6 +65,11 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     });
   }
 
+  function debug(client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.debug(), {});
+    });
+  }
 
   function setValue(selector, value, client) {
     return nativeBinding(function (c) {
@@ -136,6 +150,66 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     });
   }
 
+  function end(client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.end(), {});
+    });
+  }
+
+  function pause(ms, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.pause(ms), {});
+    });
+  }
+
+  function scrollToElement(selector, offsetX, offsetY, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.scroll(selector, x, y), {selector: selector});
+    });
+  }
+
+  function scrollWindow(x, y, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.scroll(x, y), {});
+    });
+  }
+
+  function pageScreenshot(client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.saveScreenshot(), {});
+    });
+  }
+
+  function savePageScreenshot(file, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.saveScreenshot(file), {});
+    });
+  }
+
+  function viewportScreenshot(client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.screenshot(), {});
+    });
+  }
+
+
+  function frame(index, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.frame(index), {});
+    });
+  }
+
+  function triggerClick(selector, client) {
+    return nativeBinding(function (c) {
+      var promise = client.selectorExecute(selector, function (elements) {
+        for (var i = 0; i < elements.length; i++) {
+          elements[i].click();
+        }
+      });
+      unitReturningExecute(c, promise, {selector: selector});
+    });
+  }
+
   function handleError(error, callback, context) {
     var tag = {
       ctor: 'UnknownError',
@@ -169,6 +243,7 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     url: F2(url),
     click: F2(click),
     close: close,
+    debug: debug,
     setValue: F3(setValue),
     addValue: F3(addValue),
     clearValue: F2(clearElement),
@@ -181,6 +256,15 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     waitForSelected: F4(waitForSelected),
     waitForText: F4(waitForText),
     waitForVisible: F4(waitForVisible),
-    waitForEnabled: F4(waitForEnabled)
+    waitForEnabled: F4(waitForEnabled),
+    end: end,
+    pause: F2(pause),
+    scrollToElement: F4(scrollToElement),
+    scrollWindow: F3(scrollWindow),
+    pageScreenshot: pageScreenshot,
+    savePageScreenshot: F2(savePageScreenshot),
+    viewportScreenshot: F2(viewportScreenshot),
+    frame: F2(frame),
+    triggerClick: F2(triggerClick)
   };
 }();

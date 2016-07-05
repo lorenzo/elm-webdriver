@@ -8,6 +8,7 @@ module Webdriver.LowLevel
         , url
         , click
         , close
+        , end
         , setValue
         , appendValue
         , clearValue
@@ -27,18 +28,49 @@ module Webdriver.LowLevel
         , waitForNoText
         , waitForEnabled
         , waitForNotEnabled
+        , pause
+        , scrollToElement
+        , scrollToElementOffset
+        , scrollWindow
+        , pageScreenshot
+        , savePageScreenshot
+        , viewportScreenshot
+        , switchToFrame
+        , triggerClick
+        , debug
         )
 
 {-| Offers access to the webdriver.io js library
 
 # API
-@docs open, url, click, close
+@docs open, url, click, close, end, switchToFrame
 @docs selectByIndex, selectByValue, selectByText, setValue, appendValue, clearValue, submitForm
 @docs Error, Browser, Options, Capabilities
 
-# Waiting
+## Waiting
 @docs waitForExist, waitForNotExist, waitForVisible, waitForNotVisible, waitForValue, waitForNoValue
-@docs waitForSelected, waitForNotSelected, waitForText, waitForNoText, waitForEnabled, waitForNotEnabled
+@docs waitForSelected, waitForNotSelected, waitForText, waitForNoText, waitForEnabled, waitForNotEnabled, pause
+
+## Scrolling
+
+@docs scrollToElement
+    , scrollToElementOffset
+    , scrollWindow
+
+## Screenshots
+
+@docs pageScreenshot
+    , savePageScreenshot
+    , viewportScreenshot
+
+## Custom
+
+@docs triggerClick
+
+## Debugging
+
+@docs debug
+
 -}
 
 import Native.Webdriver
@@ -118,6 +150,15 @@ click =
 close : Browser -> Task Error ()
 close =
     Native.Webdriver.close
+
+
+{-| Stops the running queue and gives you time to jump into the browser and
+check the state of your application (e.g. using the dev tools). Once you are done
+go to the command line and press Enter.
+-}
+debug : Browser -> Task Error ()
+debug =
+    Native.Webdriver.debug
 
 
 {-| Fills in the specified input with a value
@@ -263,3 +304,76 @@ waitForEnabled selector ms browser =
 waitForNotEnabled : String -> Int -> Browser -> Task Error ()
 waitForNotEnabled selector ms browser =
     Native.Webdriver.waitForEnabled selector ms True browser
+
+
+{-| Ends the browser session
+-}
+end : Browser -> Task Error ()
+end =
+    Native.Webdriver.end
+
+
+{-| Pauses the browser session for the given milliseconds
+-}
+pause : Int -> Browser -> Task Error ()
+pause =
+    Native.Webdriver.pause
+
+
+{-| Scrolls the window to the element specified in the selector
+-}
+scrollToElement : String -> Browser -> Task Error ()
+scrollToElement selector browser =
+    scrollToElementOffset selector 0 0 browser
+
+
+{-| Scrolls the window to the element specified in the selector and then scrolls
+the given amount of pixels as offset from such element
+-}
+scrollToElementOffset : String -> Int -> Int -> Browser -> Task Error ()
+scrollToElementOffset =
+    Native.Webdriver.scrollToElement
+
+
+{-| Scrolls the window to the absolute coordinate (x, y) position provided in pixels
+-}
+scrollWindow : Int -> Int -> Browser -> Task Error ()
+scrollWindow =
+    Native.Webdriver.scrollWindow
+
+
+{-| Takes a screenshot of the whole page and returns a base64 encoded png
+-}
+pageScreenshot : Browser -> Task Error String
+pageScreenshot =
+    Native.Webdriver.pageScreenshot
+
+
+{-| Takes a screenshot of the whole page and saves it to a file
+-}
+savePageScreenshot : String -> Browser -> Task Error ()
+savePageScreenshot =
+    Native.Webdriver.savePageScreenshot
+
+
+{-| Takes a screenshot of the current viewport and returns a base64 encoded png
+-}
+viewportScreenshot : Browser -> Task Error String
+viewportScreenshot =
+    Native.Webdriver.viewportScreenshot
+
+
+{-| Makes any future actions happen inside the frame specified by its index
+-}
+switchToFrame : Int -> Browser -> Task Error String
+switchToFrame =
+    Native.Webdriver.frame
+
+
+{-| Programatically trigger a click in the elements specified in the selector.
+This exists because some pages hijack in an odd way mouse click, and in order to test
+the behavior, it needs to be manually triggered.
+-}
+triggerClick : String -> Browser -> Task Error String
+triggerClick =
+    Native.Webdriver.triggerClick
