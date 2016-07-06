@@ -31,7 +31,7 @@ initModel =
     }
 
 
-actions : List Action
+actions : List Step
 actions =
     [ visit "https://bownty.dk/go/62964387"
     , click "#tilbudibyen_c1_right_box_bottom_btn_buy"
