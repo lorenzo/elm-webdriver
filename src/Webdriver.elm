@@ -1,7 +1,7 @@
 module Webdriver
     exposing
         ( Model
-        , Action
+        , Step
         , Msg(..)
         , basicOptions
         , init
@@ -42,7 +42,7 @@ module Webdriver
 
 {-| A library to interface with Webdriver.io and produce commands
 
-@docs basicOptions, init, update, Model, Msg, Action
+@docs basicOptions, init, update, Model, Msg, Step
 @docs open, visit, click, close, end, switchToFrame
 
 ## Forms
@@ -94,7 +94,7 @@ type alias Selector =
 
 {-| The valid actions that can be executed in the browser
 -}
-type Action
+type Step
     = Visit String
     | Click Selector
     | AppendValue String String
@@ -139,12 +139,12 @@ type Msg
 {-| The model used by this module to represent its state
 -}
 type alias Model =
-    ( Maybe Wd.Browser, List Action )
+    ( Maybe Wd.Browser, List Step )
 
 
 {-| Initializes a model with the give list of steps to perform
 -}
-init : List Action -> Model
+init : List Step -> Model
 init actions =
     ( Nothing, actions )
 
@@ -216,7 +216,7 @@ inputAutoWait selector browser =
         &> Wd.waitForEnabled selector 2000 browser
 
 
-process : Action -> Wd.Browser -> Cmd Msg
+process : Step -> Wd.Browser -> Cmd Msg
 process action browser =
     case action of
         Visit url ->
@@ -371,21 +371,21 @@ open options =
 
 {-| Visit a url
 -}
-visit : String -> Action
+visit : String -> Step
 visit url =
     Visit url
 
 
 {-| Click on an element using a selector
 -}
-click : String -> Action
+click : String -> Step
 click selector =
     Click selector
 
 
 {-| Close the current browser window
 -}
-close : Action
+close : Step
 close =
     Close
 
@@ -394,7 +394,7 @@ close =
 
     setValue "#email" "foo@bar.com"
 -}
-setValue : String -> String -> Action
+setValue : String -> String -> Step
 setValue selector value =
     SetValue selector value
 
@@ -404,7 +404,7 @@ setValue selector value =
     setValue "#email" "foo"
     addValue "#email" "@bar.com"
 -}
-appendValue : String -> String -> Action
+appendValue : String -> String -> Step
 appendValue selector value =
     AppendValue selector value
 
@@ -413,35 +413,35 @@ appendValue selector value =
 
     clearValue "#email"
 -}
-clearValue : String -> Action
+clearValue : String -> Step
 clearValue selector =
     ClearValue selector
 
 
 {-| Selects the option in the dropdown using the option index
 -}
-selectByIndex : String -> Int -> Action
+selectByIndex : String -> Int -> Step
 selectByIndex selector index =
     SelectByIndex selector index
 
 
 {-| Selects the option in the dropdown using the option value
 -}
-selectByValue : String -> String -> Action
+selectByValue : String -> String -> Step
 selectByValue selector value =
     SelectByValue selector value
 
 
 {-| Selects the option in the dropdown using the option visible text
 -}
-selectByText : String -> String -> Action
+selectByText : String -> String -> Step
 selectByText selector text =
     SelectByText selector text
 
 
 {-| Submits the form with the given selector
 -}
-submitForm : String -> Action
+submitForm : String -> Step
 submitForm selector =
     Submit selector
 
@@ -449,7 +449,7 @@ submitForm selector =
 {-| Wait for an element (selected by css selector) for the provided amount of
     milliseconds to be present within the DOM
 -}
-waitForExist : String -> Int -> Action
+waitForExist : String -> Int -> Step
 waitForExist selector timeout =
     WaitForExist selector timeout
 
@@ -457,7 +457,7 @@ waitForExist selector timeout =
 {-| Wait for an element (selected by css selector) for the provided amount of
     milliseconds to be present absent from the DOM
 -}
-waitForNotExist : String -> Int -> Action
+waitForNotExist : String -> Int -> Step
 waitForNotExist selector ms =
     WaitForNotExist selector ms
 
@@ -465,7 +465,7 @@ waitForNotExist selector ms =
 {-| Wait for an element (selected by css selector) for the provided amount of
     milliseconds to be visible.
 -}
-waitForVisible : String -> Int -> Action
+waitForVisible : String -> Int -> Step
 waitForVisible selector ms =
     WaitForVisible selector ms
 
@@ -473,7 +473,7 @@ waitForVisible selector ms =
 {-| Wait for an element (selected by css selector) for the provided amount of
     milliseconds to be invisible.
 -}
-waitForNotVisible : String -> Int -> Action
+waitForNotVisible : String -> Int -> Step
 waitForNotVisible selector ms =
     WaitForNotVisible selector ms
 
@@ -481,7 +481,7 @@ waitForNotVisible selector ms =
 {-| Wait for an element (selected by css selector) for the provided amount of
     milliseconds to be have a value.
 -}
-waitForValue : String -> Int -> Action
+waitForValue : String -> Int -> Step
 waitForValue selector ms =
     WaitForValue selector ms
 
@@ -489,7 +489,7 @@ waitForValue selector ms =
 {-| Wait for an element (selected by css selector) for the provided amount of
     milliseconds to have no value.
 -}
-waitForNoValue : String -> Int -> Action
+waitForNoValue : String -> Int -> Step
 waitForNoValue selector ms =
     WaitForNoValue selector ms
 
@@ -497,7 +497,7 @@ waitForNoValue selector ms =
 {-| Wait for an element (selected by css selector) for the provided amount of
     milliseconds to be selected.
 -}
-waitForSelected : String -> Int -> Action
+waitForSelected : String -> Int -> Step
 waitForSelected selector ms =
     WaitForSelected selector ms
 
@@ -505,7 +505,7 @@ waitForSelected selector ms =
 {-| Wait for an element (selected by css selector) for the provided amount of
     milliseconds to not be selected.
 -}
-waitForNotSelected : String -> Int -> Action
+waitForNotSelected : String -> Int -> Step
 waitForNotSelected selector ms =
     WaitForNotSelected selector ms
 
@@ -513,7 +513,7 @@ waitForNotSelected selector ms =
 {-| Wait for an element (selected by css selector) for the provided amount of
     milliseconds to be have some text.
 -}
-waitForText : String -> Int -> Action
+waitForText : String -> Int -> Step
 waitForText selector ms =
     WaitForText selector ms
 
@@ -521,7 +521,7 @@ waitForText selector ms =
 {-| Wait for an element (selected by css selector) for the provided amount of
     milliseconds to have no text.
 -}
-waitForNoText : String -> Int -> Action
+waitForNoText : String -> Int -> Step
 waitForNoText selector ms =
     WaitForNoText selector ms
 
@@ -529,7 +529,7 @@ waitForNoText selector ms =
 {-| Wait for an element (selected by css selector) for the provided amount of
     milliseconds to be enabled.
 -}
-waitForEnabled : String -> Int -> Action
+waitForEnabled : String -> Int -> Step
 waitForEnabled selector ms =
     WaitForEnabled selector ms
 
@@ -537,28 +537,28 @@ waitForEnabled selector ms =
 {-| Wait for an element (selected by css selector) for the provided amount of
     milliseconds to be disabled.
 -}
-waitForNotEnabled : String -> Int -> Action
+waitForNotEnabled : String -> Int -> Step
 waitForNotEnabled selector ms =
     WaitForNotEnabled selector ms
 
 
 {-| Ends the browser session
 -}
-end : Action
+end : Step
 end =
     End
 
 
 {-| Pauses the browser session for the given milliseconds
 -}
-pause : Int -> Action
+pause : Int -> Step
 pause ms =
     Pause ms
 
 
 {-| Scrolls the window to the element specified in the selector
 -}
-scrollToElement : Selector -> Action
+scrollToElement : Selector -> Step
 scrollToElement selector =
     ScrollTo selector 0 0
 
@@ -566,28 +566,28 @@ scrollToElement selector =
 {-| Scrolls the window to the element specified in the selector and then scrolls
 the given amount of pixels as offset from such element
 -}
-scrollToElementOffset : Selector -> Int -> Int -> Action
+scrollToElementOffset : Selector -> Int -> Int -> Step
 scrollToElementOffset selector x y =
     ScrollTo selector x y
 
 
 {-| Scrolls the window to the absolute coordinate (x, y) position provided in pixels
 -}
-scrollWindow : Int -> Int -> Action
+scrollWindow : Int -> Int -> Step
 scrollWindow x y =
     Scroll x y
 
 
 {-| Takes a screenshot of the whole page and saves it to a file
 -}
-savePageScreenshot : String -> Action
+savePageScreenshot : String -> Step
 savePageScreenshot filename =
     SavePagecreenshot filename
 
 
 {-| Makes any future actions happen inside the frame specified by its index
 -}
-switchToFrame : Int -> Action
+switchToFrame : Int -> Step
 switchToFrame index =
     SwitchFrame index
 
@@ -596,7 +596,7 @@ switchToFrame index =
 This exists because some pages hijack in an odd way mouse click, and in order to test
 the behavior, it needs to be manually triggered.
 -}
-triggerClick : String -> Action
+triggerClick : String -> Step
 triggerClick selector =
     TriggerClick selector
 
@@ -605,6 +605,6 @@ triggerClick selector =
 check the state of your application (e.g. using the dev tools). Once you are done
 go to the command line and press Enter.
 -}
-waitForDebug : Action
+waitForDebug : Step
 waitForDebug =
     WaitForDebug
