@@ -34,6 +34,7 @@ initModel =
 actions : List Step
 actions =
     [ visit "https://bownty.dk/go/62964387"
+    , pause 3000
     , click "#tilbudibyen_c1_right_box_bottom_btn_buy"
     , click "//*[@id=\"header_buttons_box\"]/div[3]/div/button"
     , setValue "#login_username" "jon"
@@ -46,7 +47,6 @@ actions =
     , setValue "#address_number" "5"
     , setValue "#postal_code" "2300"
     , setValue "#mobile" "31755599"
-    , close
     ]
 
 

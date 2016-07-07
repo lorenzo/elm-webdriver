@@ -8,22 +8,36 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
   var tuple2 = _elm_lang$core$Native_Utils.Tuple2;
   var unit = {ctor: '_Tuple0'};
 
-  function unitReturningExecute(callback, promise, context) {
-      promise.then(function () {
-        callback(succeed(unit));
-      })
-      .catch(function (error) {
+  function catchPromise(callback, context, promise) {
+      return promise.catch(function (error) {
         handleError(error, callback, context);
       });
   }
 
-  function arity1ReturningExecute(callback, promise) {
-      promise.then(function (a) {
+  function unitReturningExecute(callback, promise, context) {
+      return catchPromise(callback, context, promise.then(function () {
+        callback(succeed(unit));
+      }));
+  }
+
+  function arity1ReturningExecute(callback, promise, context) {
+      return catchPromise(callback, context, promise.then(function (a) {
         callback(succeed(a));
-      })
-      .catch(function (error) {
-        handleError(error, callback, context);
-      });
+      }));
+  }
+
+  function maybeReturningExecute(callback, promise, context) {
+      return catchPromise(callback, context, promise.then(function (a) {
+        if (a !== null && typeof a === "object" && 'value' in a) {
+          a = value;
+        }
+
+        if (a === null) {
+          callback(succeed(_elm_lang$core$Maybe$Nothing));
+        } else {
+          callback(succeed(_elm_lang$core$Maybe$Just(a)));
+        }
+      }));
   }
 
   function open(options) {
@@ -48,8 +62,7 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
             _1: error.screenshot,
           }));
         })
-        .getUrl();
-        arity1ReturningExecute(callback, promise, {});
+        unitReturningExecute(callback, promise, {});
     });
   }
 
@@ -199,6 +212,42 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     });
   }
 
+  function back(client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.back(), {});
+    });
+  }
+
+  function forward(client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.forward(), {});
+    });
+  }
+
+  function getUrl(client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.getUrl(), {});
+    });
+  }
+
+  function getCookie(name, client) {
+    return nativeBinding(function (c) {
+      maybeReturningExecute(c, client.getCookie(name), {});
+    });
+  }
+
+  function getAttribute(selector, name, client) {
+    return nativeBinding(function (c) {
+      maybeReturningExecute(c, client.getAttribute(selector, name), {selector: selector});
+    });
+  }
+
+  function getCssProperty(selector, name, client) {
+    return nativeBinding(function (c) {
+      maybeReturningExecute(c, client.getCssProperty(selector, name), {selector: selector});
+    });
+  }
+
   function triggerClick(selector, client) {
     return nativeBinding(function (c) {
       var promise = client.selectorExecute(selector, function (elements) {
@@ -265,6 +314,12 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     savePageScreenshot: F2(savePageScreenshot),
     viewportScreenshot: F2(viewportScreenshot),
     frame: F2(frame),
-    triggerClick: F2(triggerClick)
+    triggerClick: F2(triggerClick),
+    back: back,
+    forward: forward,
+    getUrl: getUrl,
+    getCookie: F2(getCookie),
+    getAttribute: F3(getAttribute),
+    getCssProperty: F3(getCssProperty),
   };
 }();

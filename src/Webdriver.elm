@@ -38,6 +38,10 @@ module Webdriver
         , savePageScreenshot
         , switchToFrame
         , triggerClick
+        , getCookie
+        , cookieNotExists
+        , getAttribute
+        , getCssProperty
         )
 
 {-| A library to interface with Webdriver.io and produce commands
@@ -79,6 +83,14 @@ module Webdriver
 
 @docs savePageScreenshot
 
+## Cookies
+
+@docs getCookie, cookieNotExists
+
+## Element properties
+
+@docs getAttribute, getCssProperty
+
 ## Custom
 
 @docs triggerClick
@@ -95,6 +107,14 @@ type alias Selector =
 {-| The valid actions that can be executed in the browser
 -}
 type Step
+    = ReturningUnit UnitStep
+    | BranchMaybe MaybeStep (Maybe String -> List Step)
+    | BranchString StringStep (String -> List Step)
+    | BranchBool BoolStep (Bool -> List Step)
+    | Assertion StringStep (String -> Expectation)
+
+
+type UnitStep
     = Visit String
     | Click Selector
     | AppendValue String String
@@ -127,26 +147,47 @@ type Step
     | End
 
 
+type StringStep
+    = Url
+
+
+type MaybeStep
+    = GetAttribute Selector String
+    | GetCookie String
+    | GetCss Selector String
+
+
+type BoolStep
+    = CookieExists String
+    | CookieNotExists String
+
+
 {-| The internal messages passed in this module
 -}
 type Msg
     = Start Options
     | Initiated Wd.Browser
-    | Process
+    | Process Expectation
+    | ProcessBranch (List Step)
     | OnError Wd.Error
+
+
+type Expectation
+    = Pass
+    | Fail String
 
 
 {-| The model used by this module to represent its state
 -}
 type alias Model =
-    ( Maybe Wd.Browser, List Step )
+    ( Maybe Wd.Browser, List Expectation, List Step )
 
 
 {-| Initializes a model with the give list of steps to perform
 -}
-init : List Step -> Model
+init : List (Step) -> Model
 init actions =
-    ( Nothing, actions )
+    ( Nothing, [], actions )
 
 
 {-| Initializes the browser session and executes the steps as provided
@@ -158,24 +199,31 @@ update msg model =
         ( _, Start options ) ->
             ( model, perform OnError Initiated (Wd.open options |> Task.map (\( _, b ) -> b)) )
 
-        ( ( _, actions ), Initiated browser ) ->
-            ( ( Just browser, actions ), perform OnError (always Process) (Task.succeed ()) )
+        ( ( _, exs, actions ), Initiated browser ) ->
+            ( ( Just browser, exs, actions ), perform OnError (always (Process Pass)) (Task.succeed ()) )
 
-        ( ( Just browser, End :: rest ), Process ) ->
-            ( ( Nothing, [] ), process End browser )
+        ( ( Just browser, exs, (ReturningUnit End) :: rest ), Process previousExpect ) ->
+            ( ( Nothing, previousExpect :: exs, [] ), process end browser )
 
-        ( ( Just browser, [] ), Process ) ->
-            ( ( Nothing, [] ), process End browser )
+        -- Automatically ending the session on last step
+        ( ( Just browser, exs, [] ), Process previousExpect ) ->
+            ( ( Nothing, previousExpect :: exs, [] ), process end browser )
 
-        ( ( Just browser, action :: rest ), Process ) ->
-            ( ( Just browser, rest ), process action browser )
+        ( ( Just browser, exs, action :: rest ), Process previousExpect ) ->
+            ( ( Just browser, previousExpect :: exs, rest ), process action browser )
 
-        ( ( Just browser, actions ), OnError error ) ->
+        ( ( Just browser, expectations, actions ), OnError error ) ->
             let
                 message =
                     handleError error
             in
-                ( ( Nothing, actions ), Wd.end browser |> toCmd )
+                -- Automatically ending the session on error
+                ( ( Nothing, (Fail message) :: expectations, actions ), Wd.end browser |> toCmd )
+
+        -- Processing a branch means that we need to process the branch actions and the continue with the normal
+        -- processing
+        ( ( Just browser, exs, actions ), ProcessBranch (action :: rest) ) ->
+            ( ( Just browser, exs, List.append rest actions ), process action browser )
 
         ( _, _ ) ->
             ( model, Cmd.none )
@@ -185,19 +233,19 @@ handleError : Wd.Error -> String
 handleError error =
     case error of
         Wd.ConnectionError { message } ->
-            Debug.log "Could not connect to server" message
+            Debug.log "Error" <| "Could not connect to server: " ++ message
 
         Wd.MissingElement { message, selector } ->
-            Debug.log "The element you are trying to reach is missing" message
+            Debug.log "Error" <| "The element you are trying to reach is missing" ++ message
 
         Wd.UnreachableElement { message, selector } ->
-            Debug.log "The element you are trying to reach is not visible" message
+            Debug.log "Error" <| "The element you are trying to reach is not visible" ++ message
 
         Wd.FailedElementPrecondition { message, selector } ->
-            Debug.log "You were waiting for an element, but it is not as you expected" message
+            Debug.log "Error" <| "You were waiting for an element, but it is not as you expected" ++ message
 
         Wd.UnknownError { message } ->
-            Debug.log "Oops, something wrong happened" message
+            Debug.log "Error" <| "Oops, something wrong happened" ++ message
 
 
 (&>) : Task x y -> Task x z -> Task x z
@@ -210,6 +258,11 @@ autoWait selector browser =
     Wd.waitForVisible selector 2000 browser
 
 
+existAutoWait : Selector -> Wd.Browser -> Task Wd.Error ()
+existAutoWait selector browser =
+    Wd.waitForExist selector 2000 browser
+
+
 inputAutoWait : Selector -> Wd.Browser -> Task Wd.Error ()
 inputAutoWait selector browser =
     autoWait selector browser
@@ -218,138 +271,187 @@ inputAutoWait selector browser =
 
 process : Step -> Wd.Browser -> Cmd Msg
 process action browser =
-    case action of
+    let
+        command =
+            case Debug.log "processing" action of
+                Assertion step assert ->
+                    processStringStep step browser
+                        |> Task.map assert
+                        |> Task.perform OnError Process
+
+                ReturningUnit step ->
+                    processStep step browser
+                        |> toCmd
+
+                BranchMaybe step decider ->
+                    processMaybeStep step browser
+                        |> performBranch decider
+
+                BranchString step decider ->
+                    processStringStep step browser
+                        |> performBranch decider
+
+                BranchBool step decider ->
+                    processBoolStep step browser
+                        |> performBranch decider
+    in
+        command
+
+
+performBranch : (a -> List Step) -> Task Error a -> Cmd Msg
+performBranch decider task =
+    task
+        |> Task.map (resolveBranch decider)
+        |> Task.perform OnError identity
+
+
+resolveBranch : (a -> List Step) -> a -> Msg
+resolveBranch decider value =
+    case decider value of
+        [] ->
+            Process Pass
+
+        list ->
+            ProcessBranch list
+
+
+processStringStep : StringStep -> Wd.Browser -> Task Error String
+processStringStep step browser =
+    case step of
+        Url ->
+            Wd.getUrl browser
+
+
+processMaybeStep : MaybeStep -> Wd.Browser -> Task Error (Maybe String)
+processMaybeStep step browser =
+    case step of
+        GetCookie name ->
+            Wd.getCookie name browser
+
+        GetAttribute selector name ->
+            existAutoWait selector browser
+                &> Wd.getAttribute selector name browser
+
+        GetCss selector name ->
+            existAutoWait selector browser
+                &> Wd.getCssProperty selector name browser
+
+
+processBoolStep : BoolStep -> Wd.Browser -> Task Error Bool
+processBoolStep step browser =
+    case step of
+        CookieExists name ->
+            Wd.cookieExists name browser
+
+        CookieNotExists name ->
+            Wd.cookieExists name browser
+                |> Task.map not
+
+
+processStep : UnitStep -> Wd.Browser -> Task Error ()
+processStep step browser =
+    case step of
         Visit url ->
             Wd.url url browser
-                |> toCmd
 
         Click selector ->
             autoWait selector browser
                 &> Wd.click selector browser
-                |> toCmd
 
         SetValue selector value ->
             inputAutoWait selector browser
                 &> Wd.setValue selector value browser
-                |> toCmd
 
         AppendValue selector value ->
             inputAutoWait selector browser
                 &> Wd.appendValue selector value browser
-                |> toCmd
 
         ClearValue selector ->
             inputAutoWait selector browser
                 &> Wd.clearValue selector browser
-                |> toCmd
 
         SelectByValue selector value ->
             inputAutoWait selector browser
                 &> Wd.selectByValue selector value browser
-                |> toCmd
 
         SelectByIndex selector index ->
             inputAutoWait selector browser
                 &> Wd.selectByIndex selector index browser
-                |> toCmd
 
         SelectByText selector text ->
             inputAutoWait selector browser
                 &> Wd.selectByText selector text browser
-                |> toCmd
 
         Submit selector ->
             Wd.submitForm selector browser
-                |> toCmd
 
         WaitForExist selector timeout ->
             Wd.waitForExist selector timeout browser
-                |> toCmd
 
         WaitForNotExist selector timeout ->
             Wd.waitForNotExist selector timeout browser
-                |> toCmd
 
         WaitForVisible selector timeout ->
             Wd.waitForVisible selector timeout browser
-                |> toCmd
 
         WaitForNotVisible selector timeout ->
             Wd.waitForNotVisible selector timeout browser
-                |> toCmd
 
         WaitForValue selector timeout ->
             Wd.waitForValue selector timeout browser
-                |> toCmd
 
         WaitForNoValue selector timeout ->
             Wd.waitForNoValue selector timeout browser
-                |> toCmd
 
         WaitForSelected selector timeout ->
             Wd.waitForSelected selector timeout browser
-                |> toCmd
 
         WaitForNotSelected selector timeout ->
             Wd.waitForNotSelected selector timeout browser
-                |> toCmd
 
         WaitForText selector timeout ->
             Wd.waitForText selector timeout browser
-                |> toCmd
 
         WaitForNoText selector timeout ->
             Wd.waitForNoText selector timeout browser
-                |> toCmd
 
         WaitForEnabled selector timeout ->
             Wd.waitForEnabled selector timeout browser
-                |> toCmd
 
         WaitForNotEnabled selector timeout ->
             Wd.waitForNotEnabled selector timeout browser
-                |> toCmd
 
         WaitForDebug ->
             Wd.debug browser
-                |> toCmd
 
         Pause timeout ->
             Wd.pause timeout browser
-                |> toCmd
 
         Scroll x y ->
             Wd.scrollWindow x y browser
-                |> toCmd
 
         ScrollTo selector x y ->
             Wd.scrollToElementOffset selector x y browser
-                |> toCmd
 
         SavePagecreenshot filename ->
             Wd.savePageScreenshot filename browser
-                |> toCmd
 
         SwitchFrame index ->
             Wd.switchToFrame index browser
-                |> toCmd
 
         TriggerClick selector ->
             Wd.triggerClick selector browser
-                |> toCmd
 
         End ->
             Wd.end browser
-                |> toCmd
 
         Close ->
             Wd.close browser
-                |> toCmd
 
 
 toCmd : Task Error a -> Cmd Msg
 toCmd =
-    perform OnError (always Process)
+    perform OnError (always (Process Pass))
 
 
 {-| Bare minimum options for running selenium
@@ -374,6 +476,7 @@ open options =
 visit : String -> Step
 visit url =
     Visit url
+        |> ReturningUnit
 
 
 {-| Click on an element using a selector
@@ -381,6 +484,7 @@ visit url =
 click : String -> Step
 click selector =
     Click selector
+        |> ReturningUnit
 
 
 {-| Close the current browser window
@@ -388,6 +492,7 @@ click selector =
 close : Step
 close =
     Close
+        |> ReturningUnit
 
 
 {-| Fills in the specified input with the given value
@@ -397,6 +502,7 @@ close =
 setValue : String -> String -> Step
 setValue selector value =
     SetValue selector value
+        |> ReturningUnit
 
 
 {-| Appends the given string to the specified input's current value
@@ -407,6 +513,7 @@ setValue selector value =
 appendValue : String -> String -> Step
 appendValue selector value =
     AppendValue selector value
+        |> ReturningUnit
 
 
 {-| Clears the value of the specified input field
@@ -416,6 +523,7 @@ appendValue selector value =
 clearValue : String -> Step
 clearValue selector =
     ClearValue selector
+        |> ReturningUnit
 
 
 {-| Selects the option in the dropdown using the option index
@@ -423,6 +531,7 @@ clearValue selector =
 selectByIndex : String -> Int -> Step
 selectByIndex selector index =
     SelectByIndex selector index
+        |> ReturningUnit
 
 
 {-| Selects the option in the dropdown using the option value
@@ -430,6 +539,7 @@ selectByIndex selector index =
 selectByValue : String -> String -> Step
 selectByValue selector value =
     SelectByValue selector value
+        |> ReturningUnit
 
 
 {-| Selects the option in the dropdown using the option visible text
@@ -437,6 +547,7 @@ selectByValue selector value =
 selectByText : String -> String -> Step
 selectByText selector text =
     SelectByText selector text
+        |> ReturningUnit
 
 
 {-| Submits the form with the given selector
@@ -444,6 +555,7 @@ selectByText selector text =
 submitForm : String -> Step
 submitForm selector =
     Submit selector
+        |> ReturningUnit
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -452,6 +564,7 @@ submitForm selector =
 waitForExist : String -> Int -> Step
 waitForExist selector timeout =
     WaitForExist selector timeout
+        |> ReturningUnit
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -460,6 +573,7 @@ waitForExist selector timeout =
 waitForNotExist : String -> Int -> Step
 waitForNotExist selector ms =
     WaitForNotExist selector ms
+        |> ReturningUnit
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -468,6 +582,7 @@ waitForNotExist selector ms =
 waitForVisible : String -> Int -> Step
 waitForVisible selector ms =
     WaitForVisible selector ms
+        |> ReturningUnit
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -476,6 +591,7 @@ waitForVisible selector ms =
 waitForNotVisible : String -> Int -> Step
 waitForNotVisible selector ms =
     WaitForNotVisible selector ms
+        |> ReturningUnit
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -484,6 +600,7 @@ waitForNotVisible selector ms =
 waitForValue : String -> Int -> Step
 waitForValue selector ms =
     WaitForValue selector ms
+        |> ReturningUnit
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -492,6 +609,7 @@ waitForValue selector ms =
 waitForNoValue : String -> Int -> Step
 waitForNoValue selector ms =
     WaitForNoValue selector ms
+        |> ReturningUnit
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -500,6 +618,7 @@ waitForNoValue selector ms =
 waitForSelected : String -> Int -> Step
 waitForSelected selector ms =
     WaitForSelected selector ms
+        |> ReturningUnit
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -508,6 +627,7 @@ waitForSelected selector ms =
 waitForNotSelected : String -> Int -> Step
 waitForNotSelected selector ms =
     WaitForNotSelected selector ms
+        |> ReturningUnit
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -516,6 +636,7 @@ waitForNotSelected selector ms =
 waitForText : String -> Int -> Step
 waitForText selector ms =
     WaitForText selector ms
+        |> ReturningUnit
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -524,6 +645,7 @@ waitForText selector ms =
 waitForNoText : String -> Int -> Step
 waitForNoText selector ms =
     WaitForNoText selector ms
+        |> ReturningUnit
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -532,6 +654,7 @@ waitForNoText selector ms =
 waitForEnabled : String -> Int -> Step
 waitForEnabled selector ms =
     WaitForEnabled selector ms
+        |> ReturningUnit
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -540,6 +663,7 @@ waitForEnabled selector ms =
 waitForNotEnabled : String -> Int -> Step
 waitForNotEnabled selector ms =
     WaitForNotEnabled selector ms
+        |> ReturningUnit
 
 
 {-| Ends the browser session
@@ -547,6 +671,7 @@ waitForNotEnabled selector ms =
 end : Step
 end =
     End
+        |> ReturningUnit
 
 
 {-| Pauses the browser session for the given milliseconds
@@ -554,6 +679,7 @@ end =
 pause : Int -> Step
 pause ms =
     Pause ms
+        |> ReturningUnit
 
 
 {-| Scrolls the window to the element specified in the selector
@@ -561,6 +687,7 @@ pause ms =
 scrollToElement : Selector -> Step
 scrollToElement selector =
     ScrollTo selector 0 0
+        |> ReturningUnit
 
 
 {-| Scrolls the window to the element specified in the selector and then scrolls
@@ -569,6 +696,7 @@ the given amount of pixels as offset from such element
 scrollToElementOffset : Selector -> Int -> Int -> Step
 scrollToElementOffset selector x y =
     ScrollTo selector x y
+        |> ReturningUnit
 
 
 {-| Scrolls the window to the absolute coordinate (x, y) position provided in pixels
@@ -576,6 +704,7 @@ scrollToElementOffset selector x y =
 scrollWindow : Int -> Int -> Step
 scrollWindow x y =
     Scroll x y
+        |> ReturningUnit
 
 
 {-| Takes a screenshot of the whole page and saves it to a file
@@ -583,6 +712,7 @@ scrollWindow x y =
 savePageScreenshot : String -> Step
 savePageScreenshot filename =
     SavePagecreenshot filename
+        |> ReturningUnit
 
 
 {-| Makes any future actions happen inside the frame specified by its index
@@ -590,6 +720,7 @@ savePageScreenshot filename =
 switchToFrame : Int -> Step
 switchToFrame index =
     SwitchFrame index
+        |> ReturningUnit
 
 
 {-| Programatically trigger a click in the elements specified in the selector.
@@ -599,6 +730,7 @@ the behavior, it needs to be manually triggered.
 triggerClick : String -> Step
 triggerClick selector =
     TriggerClick selector
+        |> ReturningUnit
 
 
 {-| Stops the running queue and gives you time to jump into the browser and
@@ -608,3 +740,46 @@ go to the command line and press Enter.
 waitForDebug : Step
 waitForDebug =
     WaitForDebug
+        |> ReturningUnit
+
+
+{-| Returns the value of a cookie by name
+-}
+getCookie : String -> MaybeStep
+getCookie name =
+    GetCookie name
+
+
+{-| Returns true if a cookie exists
+-}
+cookieExists : String -> BoolStep
+cookieExists name =
+    CookieExists name
+
+
+{-| Returns false if a cookie exists
+-}
+cookieNotExists : String -> BoolStep
+cookieNotExists name =
+    CookieNotExists name
+
+
+{-| Returns the current window URL
+-}
+getUrl : StringStep
+getUrl =
+    Url
+
+
+{-| Returns a specific attribute form the element
+-}
+getAttribute : Selector -> String -> MaybeStep
+getAttribute selector name =
+    GetAttribute selector name
+
+
+{-| Returns a specific attribute form the element
+-}
+getCssProperty : Selector -> String -> MaybeStep
+getCssProperty selector name =
+    GetCss selector name

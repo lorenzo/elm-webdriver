@@ -9,6 +9,8 @@ module Webdriver.LowLevel
         , click
         , close
         , end
+        , back
+        , forward
         , setValue
         , appendValue
         , clearValue
@@ -38,30 +40,57 @@ module Webdriver.LowLevel
         , switchToFrame
         , triggerClick
         , debug
+        , getUrl
+        , getCookie
+        , getAttribute
+        , getCssProperty
+        , getElementSize
+        , getElementHTML
+        , getElementPosition
+        , getElementViewPosition
+        , getPageHTML
+        , getText
+        , getTitle
+        , getValue
+        , elementExists
+        , elementEnabled
+        , elementVisible
+        , elementVisibleWithinViewport
+        , optionIsSelected
+        , cookieExists
         )
 
 {-| Offers access to the webdriver.io js library
 
-# API
-@docs open, url, click, close, end, switchToFrame
-@docs selectByIndex, selectByValue, selectByText, setValue, appendValue, clearValue, submitForm
+## Types
+
 @docs Error, Browser, Options, Capabilities
 
+## Navigation
+@docs open, url, click, close, end, switchToFrame
+
+## Forms
+
+@docs selectByIndex, selectByValue, selectByText, setValue, appendValue
+    ,clearValue, submitForm
+
+## History
+
+@docs back, forward
+
 ## Waiting
-@docs waitForExist, waitForNotExist, waitForVisible, waitForNotVisible, waitForValue, waitForNoValue
-@docs waitForSelected, waitForNotSelected, waitForText, waitForNoText, waitForEnabled, waitForNotEnabled, pause
+
+@docs waitForExist, waitForNotExist, waitForVisible, waitForNotVisible
+    , waitForValue, waitForNoValue, waitForSelected, waitForNotSelected
+    , waitForText, waitForNoText, waitForEnabled, waitForNotEnabled, pause
 
 ## Scrolling
 
-@docs scrollToElement
-    , scrollToElementOffset
-    , scrollWindow
+@docs scrollToElement, scrollToElementOffset, scrollWindow
 
 ## Screenshots
 
-@docs pageScreenshot
-    , savePageScreenshot
-    , viewportScreenshot
+@docs pageScreenshot, savePageScreenshot, viewportScreenshot
 
 ## Custom
 
@@ -70,6 +99,21 @@ module Webdriver.LowLevel
 ## Debugging
 
 @docs debug
+
+## Page properties
+
+@docs getUrl, getPageHTML, getTitle
+
+## Element properties
+
+@docs getAttribute, getCssProperty, getElementSize, getElementHTML
+    , getElementPosition, getElementViewPosition, getText, getValue
+    , elementExists, elementVisible, elementVisibleWithinViewport
+    , elementEnabled, optionIsSelected
+
+## Cokies
+
+@docs getCookie, cookieExists
 
 -}
 
@@ -108,7 +152,7 @@ type Error
 
 
 type alias WithScreenshot a =
-    { a | screeshot : String }
+    { a | screenshot : String }
 
 
 type alias WithSelector a =
@@ -130,10 +174,8 @@ open =
 
 
 {-| Visits the given url.
-The result of the task is the resulting URL address, after any
-possible redirects.
 -}
-url : String -> Browser -> Task Error String
+url : String -> Browser -> Task Error ()
 url =
     Native.Webdriver.url
 
@@ -365,7 +407,7 @@ viewportScreenshot =
 
 {-| Makes any future actions happen inside the frame specified by its index
 -}
-switchToFrame : Int -> Browser -> Task Error String
+switchToFrame : Int -> Browser -> Task Error ()
 switchToFrame =
     Native.Webdriver.frame
 
@@ -374,6 +416,153 @@ switchToFrame =
 This exists because some pages hijack in an odd way mouse click, and in order to test
 the behavior, it needs to be manually triggered.
 -}
-triggerClick : String -> Browser -> Task Error String
+triggerClick : String -> Browser -> Task Error ()
 triggerClick =
     Native.Webdriver.triggerClick
+
+
+{-| Goes back in the browser history
+-}
+back : Browser -> Task Error ()
+back =
+    Native.Webdriver.back
+
+
+{-| Goes forward in the browser history
+-}
+forward : Browser -> Task Error ()
+forward =
+    Native.Webdriver.forward
+
+
+{-| Returns the url for the current browser window
+-}
+getUrl : Browser -> Task Error String
+getUrl =
+    Native.Webdriver.getUrl
+
+
+{-| Returns the cookie value for the given cookie name
+-}
+getCookie : String -> Browser -> Task Error (Maybe String)
+getCookie =
+    Native.Webdriver.getCookie
+
+
+{-| Returns the value for the given attribute in the specified element by selector
+-}
+getAttribute : String -> String -> Browser -> Task Error (Maybe String)
+getAttribute =
+    Native.Webdriver.getAttribute
+
+
+{-| Returns the value for the given attribute in the specified element by selector
+-}
+getCssProperty : String -> String -> Browser -> Task Error (Maybe String)
+getCssProperty =
+    Native.Webdriver.getCssProperty
+
+
+{-| Returns the size of the give element
+-}
+getElementSize : String -> Browser -> Task Error { width : Int, height : Int }
+getElementSize =
+    Native.Webdriver.getElementSize
+
+
+{-| Returns the HTML for the given element
+-}
+getElementHTML : String -> Browser -> Task Error String
+getElementHTML =
+    Native.Webdriver.getHTML
+
+
+{-| Returns the element's location on a page
+-}
+getElementPosition : String -> Browser -> Task Error { x : Int, y : Int }
+getElementPosition =
+    Native.Webdriver.getLocation
+
+
+{-| Determine an element’s location on the screen once it has been scrolled into view.
+-}
+getElementViewPosition : String -> Browser -> Task Error { x : Int, y : Int }
+getElementViewPosition =
+    Native.Webdriver.getLocationInView
+
+
+{-| Returns the page HTML
+-}
+getPageHTML : Browser -> Task Error String
+getPageHTML =
+    Native.Webdriver.getSource
+
+
+{-| Returns the text node for the given element
+-}
+getText : String -> Browser -> Task Error String
+getText =
+    Native.Webdriver.getText
+
+
+{-| Returns the current window title
+-}
+getTitle : Browser -> Task Error String
+getTitle =
+    Native.Webdriver.getTitle
+
+
+{-| Returns the input element's current value
+-}
+getValue : String -> Browser -> Task Error String
+getValue =
+    Native.Webdriver.getValue
+
+
+{-| Returns true if the element exists in the DOM
+-}
+elementExists : String -> Browser -> Task Error Bool
+elementExists =
+    Native.Webdriver.isExisting
+
+
+{-| Returns true if the input element is enabled
+-}
+elementEnabled : String -> Browser -> Task Error Bool
+elementEnabled =
+    Native.Webdriver.isEnabled
+
+
+{-| Returns true if the input element is visible
+-}
+elementVisible : String -> Browser -> Task Error Bool
+elementVisible =
+    Native.Webdriver.isVisible
+
+
+{-| Returns true if the input element is visible
+-}
+elementVisibleWithinViewport : String -> Browser -> Task Error Bool
+elementVisibleWithinViewport =
+    Native.Webdriver.isVisibleWithinViewport
+
+
+{-| Returns true if the select option specified in the element selector is selected
+-}
+optionIsSelected : String -> Browser -> Task Error Bool
+optionIsSelected =
+    Native.Webdriver.isSelected
+
+
+{-| Returns true if the specified cookie is present
+-}
+cookieExists : String -> Browser -> Task Error Bool
+cookieExists name browser =
+    getCookie name browser
+        |> Task.map
+            (\res ->
+                if res == Nothing then
+                    False
+                else
+                    True
+            )
