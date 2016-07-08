@@ -38,10 +38,6 @@ module Webdriver
         , savePageScreenshot
         , switchToFrame
         , triggerClick
-        , getCookie
-        , cookieNotExists
-        , getAttribute
-        , getCssProperty
         )
 
 {-| A library to interface with Webdriver.io and produce commands
@@ -83,83 +79,14 @@ module Webdriver
 
 @docs savePageScreenshot
 
-## Cookies
-
-@docs getCookie, cookieNotExists
-
-## Element properties
-
-@docs getAttribute, getCssProperty
-
 ## Custom
 
 @docs triggerClick
 -}
 
 import Webdriver.LowLevel as Wd exposing (Error, Browser, Options)
+import Webdriver.Step exposing (..)
 import Task exposing (Task, perform)
-
-
-type alias Selector =
-    String
-
-
-{-| The valid actions that can be executed in the browser
--}
-type Step
-    = ReturningUnit UnitStep
-    | BranchMaybe MaybeStep (Maybe String -> List Step)
-    | BranchString StringStep (String -> List Step)
-    | BranchBool BoolStep (Bool -> List Step)
-    | Assertion StringStep (String -> Expectation)
-
-
-type UnitStep
-    = Visit String
-    | Click Selector
-    | AppendValue String String
-    | ClearValue String
-    | SetValue Selector String
-    | SelectByValue Selector String
-    | SelectByIndex Selector Int
-    | SelectByText Selector String
-    | Submit Selector
-    | WaitForExist Selector Int
-    | WaitForNotExist Selector Int
-    | WaitForVisible Selector Int
-    | WaitForNotVisible Selector Int
-    | WaitForValue Selector Int
-    | WaitForNoValue Selector Int
-    | WaitForSelected Selector Int
-    | WaitForNotSelected Selector Int
-    | WaitForText Selector Int
-    | WaitForNoText Selector Int
-    | WaitForEnabled Selector Int
-    | WaitForNotEnabled Selector Int
-    | WaitForDebug
-    | Pause Int
-    | ScrollTo Selector Int Int
-    | Scroll Int Int
-    | SavePagecreenshot String
-    | SwitchFrame Int
-    | TriggerClick Selector
-    | Close
-    | End
-
-
-type StringStep
-    = Url
-
-
-type MaybeStep
-    = GetAttribute Selector String
-    | GetCookie String
-    | GetCss Selector String
-
-
-type BoolStep
-    = CookieExists String
-    | CookieNotExists String
 
 
 {-| The internal messages passed in this module
@@ -172,9 +99,18 @@ type Msg
     | OnError Wd.Error
 
 
-type Expectation
-    = Pass
-    | Fail String
+{-| The valid actions that can be executed in the browser
+-}
+type alias Step =
+    Webdriver.Step.Step
+
+
+type alias Selector =
+    String
+
+
+type alias Expectation =
+    Webdriver.Step.Expectation
 
 
 {-| The model used by this module to represent its state
@@ -255,18 +191,18 @@ handleError error =
 
 autoWait : Selector -> Wd.Browser -> Task Wd.Error ()
 autoWait selector browser =
-    Wd.waitForVisible selector 2000 browser
+    Wd.waitForVisible selector 5000 browser
 
 
 existAutoWait : Selector -> Wd.Browser -> Task Wd.Error ()
 existAutoWait selector browser =
-    Wd.waitForExist selector 2000 browser
+    Wd.waitForExist selector 5000 browser
 
 
 inputAutoWait : Selector -> Wd.Browser -> Task Wd.Error ()
 inputAutoWait selector browser =
     autoWait selector browser
-        &> Wd.waitForEnabled selector 2000 browser
+        &> Wd.waitForEnabled selector 5000 browser
 
 
 process : Step -> Wd.Browser -> Cmd Msg
@@ -741,45 +677,3 @@ waitForDebug : Step
 waitForDebug =
     WaitForDebug
         |> ReturningUnit
-
-
-{-| Returns the value of a cookie by name
--}
-getCookie : String -> MaybeStep
-getCookie name =
-    GetCookie name
-
-
-{-| Returns true if a cookie exists
--}
-cookieExists : String -> BoolStep
-cookieExists name =
-    CookieExists name
-
-
-{-| Returns false if a cookie exists
--}
-cookieNotExists : String -> BoolStep
-cookieNotExists name =
-    CookieNotExists name
-
-
-{-| Returns the current window URL
--}
-getUrl : StringStep
-getUrl =
-    Url
-
-
-{-| Returns a specific attribute form the element
--}
-getAttribute : Selector -> String -> MaybeStep
-getAttribute selector name =
-    GetAttribute selector name
-
-
-{-| Returns a specific attribute form the element
--}
-getCssProperty : Selector -> String -> MaybeStep
-getCssProperty selector name =
-    GetCss selector name

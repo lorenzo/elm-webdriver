@@ -29,7 +29,7 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
   function maybeReturningExecute(callback, promise, context) {
       return catchPromise(callback, context, promise.then(function (a) {
         if (a !== null && typeof a === "object" && 'value' in a) {
-          a = value;
+          a = a.value;
         }
 
         if (a === null) {
