@@ -254,8 +254,26 @@ resolveBranch decider value =
 processStringStep : StringStep -> Wd.Browser -> Task Error String
 processStringStep step browser =
     case step of
-        Url ->
+        GetUrl ->
             Wd.getUrl browser
+
+        GetHtml selector ->
+            existAutoWait selector browser
+                &> Wd.getElementHTML selector browser
+
+        GetSource ->
+            Wd.getPageHTML browser
+
+        GetTitle ->
+            Wd.getTitle browser
+
+        GetText selector ->
+            existAutoWait selector browser
+                &> Wd.getText selector browser
+
+        GetValue selector ->
+            existAutoWait selector browser
+                &> Wd.getValue selector browser
 
 
 processMaybeStep : MaybeStep -> Wd.Browser -> Task Error (Maybe String)
@@ -282,6 +300,25 @@ processBoolStep step browser =
         CookieNotExists name ->
             Wd.cookieExists name browser
                 |> Task.map not
+
+        ElementExists selector ->
+            Wd.elementExists selector browser
+
+        ElementEnabled selector ->
+            existAutoWait selector browser
+                &> Wd.elementEnabled selector browser
+
+        ElementVisible selector ->
+            existAutoWait selector browser
+                &> Wd.elementVisible selector browser
+
+        ElementViewportVisible selector ->
+            existAutoWait selector browser
+                &> Wd.elementVisibleWithinViewport selector browser
+
+        OptionSelected selector ->
+            existAutoWait selector browser
+                &> Wd.optionIsSelected selector browser
 
 
 processStep : UnitStep -> Wd.Browser -> Task Error ()

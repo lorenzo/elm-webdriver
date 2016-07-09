@@ -12,6 +12,16 @@ module Webdriver.Step
         , getUrl
         , getAttribute
         , getCssProperty
+        , getElementHTML
+        , getPageHTML
+        , getText
+        , getTitle
+        , getValue
+        , elementExists
+        , elementEnabled
+        , elementVisible
+        , elementVisibleWithinViewport
+        , optionIsSelected
         )
 
 
@@ -68,7 +78,12 @@ type UnitStep
 
 
 type StringStep
-    = Url
+    = GetUrl
+    | GetHtml String
+    | GetSource
+    | GetTitle
+    | GetText String
+    | GetValue String
 
 
 type MaybeStep
@@ -80,6 +95,11 @@ type MaybeStep
 type BoolStep
     = CookieExists String
     | CookieNotExists String
+    | ElementExists String
+    | ElementEnabled String
+    | ElementVisible String
+    | ElementViewportVisible String
+    | OptionSelected String
 
 
 {-| Returns the value of a cookie by name
@@ -107,7 +127,7 @@ cookieNotExists name =
 -}
 getUrl : StringStep
 getUrl =
-    Url
+    GetUrl
 
 
 {-| Returns a specific attribute form the element
@@ -122,3 +142,74 @@ getAttribute selector name =
 getCssProperty : Selector -> String -> MaybeStep
 getCssProperty selector name =
     GetCss selector name
+
+
+{-| Returns the HTML for an element
+-}
+getElementHTML : Selector -> StringStep
+getElementHTML selector =
+    GetHtml selector
+
+
+{-| Returns the page HTML
+-}
+getPageHTML : StringStep
+getPageHTML =
+    GetSource
+
+
+{-| Returns the page title
+-}
+getTitle : StringStep
+getTitle =
+    GetTitle
+
+
+{-| Returns the concatenation of all text nodes for the element
+-}
+getText : String -> StringStep
+getText selector =
+    GetText selector
+
+
+{-| Returns the value for the given input
+-}
+getValue : String -> StringStep
+getValue selector =
+    GetValue selector
+
+
+{-| Returns whether or not an element exists in the page
+-}
+elementExists : String -> BoolStep
+elementExists selector =
+    ElementExists selector
+
+
+{-| Returns whether or not an input is enabled
+-}
+elementEnabled : String -> BoolStep
+elementEnabled selector =
+    ElementEnabled selector
+
+
+{-| Returns whether or not an element is visible
+-}
+elementVisible : String -> BoolStep
+elementVisible selector =
+    ElementVisible selector
+
+
+{-| Returns whether or not an element is visible within
+the viewport
+-}
+elementVisibleWithinViewport : String -> BoolStep
+elementVisibleWithinViewport selector =
+    ElementViewportVisible selector
+
+
+{-| Returns whether or not an select option is currently selected
+-}
+optionIsSelected : String -> BoolStep
+optionIsSelected selector =
+    OptionSelected selector

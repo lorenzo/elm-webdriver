@@ -248,6 +248,66 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     });
   }
 
+  function getHTML(selector, client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.getHTML(selector), {selector: selector});
+    });
+  }
+
+  function getSource(client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.getSource(), {});
+    });
+  }
+
+  function getTitle(client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.getTitle(), {});
+    });
+  }
+
+  function getText(selector, client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.getText(selector), {selector: selector});
+    });
+  }
+
+  function getValue(selector, client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.getValue(selector), {selector: selector});
+    });
+  }
+
+  function isExisting(selector, client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.isExisting(selector), {selector: selector});
+    });
+  }
+
+  function isEnabled(selector, client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.isEnabled(selector), {selector: selector});
+    });
+  }
+
+  function isVisible(selector, client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.isVisible(selector), {selector: selector});
+    });
+  }
+
+  function isSelected(selector, client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.isSelected(selector), {selector: selector});
+    });
+  }
+
+  function isVisibleWithinViewport(selector, client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.isVisibleWithinViewport(selector), {selector: selector});
+    });
+  }
+
   function triggerClick(selector, client) {
     return nativeBinding(function (c) {
       var promise = client.selectorExecute(selector, function (elements) {
@@ -321,5 +381,15 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     getCookie: F2(getCookie),
     getAttribute: F3(getAttribute),
     getCssProperty: F3(getCssProperty),
+    getHTML: F2(getHTML),
+    getSource: getSource,
+    getTitle: getTitle,
+    getText: F2(getText),
+    getValue: F2(getValue),
+    isExisting: F2(isExisting),
+    isEnabled: F2(isEnabled),
+    isVisible: F2(isVisible),
+    isVisibleWithinViewport: F2(isVisibleWithinViewport),
+    isSelected: F2(isSelected)
   };
 }();

@@ -3,7 +3,18 @@ module Webdriver.Branch exposing (..)
 {-| Enables you to conditionally execute a list of steps depending on the current
 state of the browser.
 
-@docs whenCookie, whenCookieExists, whenCookieNotExists, whenUrl, whenAttribute, whenCss
+## Cookies
+
+@docs ifCookie, ifCookieExists, ifCookieNotExists
+
+## Page properties
+
+@docs ifUrl, ifPageHTML, ifTitle
+
+## Element properties
+
+@docs ifAttribute, ifCss, ifElementHTML, ifText, ifValue, ifExists
+@docs ifEnabled, ifVisible, ifVisibleWithinViewport, ifOptionIsSelected
 -}
 
 import Webdriver.Step exposing (..)
@@ -12,18 +23,18 @@ import Webdriver.Step exposing (..)
 {-| Executes the list of steps the passed function returns depending
 on the value of the specified cookie
 -}
-whenCookie : String -> (Maybe String -> List Step) -> Step
-whenCookie name f =
+ifCookie : String -> (Maybe String -> List Step) -> Step
+ifCookie name f =
     BranchMaybe (getCookie name) f
 
 
 {-| Executes the provided list of steps if the specified cookie exists
 -}
-whenCookieExists : String -> List Step -> Step
-whenCookieExists name list =
+ifCookieExists : String -> List Step -> Step
+ifCookieExists name list =
     BranchBool (cookieExists name)
         (\res ->
-            if Debug.log "exists" res then
+            if res then
                 list
             else
                 []
@@ -32,8 +43,8 @@ whenCookieExists name list =
 
 {-| Executes the provided list of steps if the specified cookie does not exist
 -}
-whenCookieNotExists : String -> List Step -> Step
-whenCookieNotExists name list =
+ifCookieNotExists : String -> List Step -> Step
+ifCookieNotExists name list =
     BranchBool (cookieNotExists name)
         (\res ->
             if res then
@@ -46,22 +57,102 @@ whenCookieNotExists name list =
 {-| Executes the list of steps the passed function returns depending
 on the current url
 -}
-whenUrl : (String -> List Step) -> Step
-whenUrl f =
+ifUrl : (String -> List Step) -> Step
+ifUrl f =
     BranchString getUrl f
+
+
+{-| Executes the list of steps the passed function returns depending
+on the current page title
+-}
+ifTitle : (String -> List Step) -> Step
+ifTitle f =
+    BranchString getTitle f
+
+
+{-| Executes the list of steps the passed function returns depending
+on the current page source
+-}
+ifPageHTML : (String -> List Step) -> Step
+ifPageHTML f =
+    BranchString getPageHTML f
 
 
 {-| Executes the list of steps the passed function returns depending
 on the value of the specified attribute in the given element
 -}
-whenAttribute : String -> String -> (Maybe String -> List Step) -> Step
-whenAttribute selector name f =
+ifAttribute : String -> String -> (Maybe String -> List Step) -> Step
+ifAttribute selector name f =
     BranchMaybe (getAttribute selector name) f
 
 
 {-| Executes the list of steps the passed function returns depending
 on the value of the specified css attribute in the given element
 -}
-whenCss : String -> String -> (Maybe String -> List Step) -> Step
-whenCss selector name f =
+ifCss : String -> String -> (Maybe String -> List Step) -> Step
+ifCss selector name f =
     BranchMaybe (getCssProperty selector name) f
+
+
+{-| Executes the list of steps the passed function returns depending
+on the value of the HTMl for the given element
+-}
+ifElementHTML : String -> (String -> List Step) -> Step
+ifElementHTML selector f =
+    BranchString (getElementHTML selector) f
+
+
+{-| Executes the list of steps the passed function returns depending
+on the value of the text node of the given element
+-}
+ifText : String -> (String -> List Step) -> Step
+ifText selector f =
+    BranchString (getText selector) f
+
+
+{-| Executes the list of steps the passed function returns depending
+on the value of the specified input field
+-}
+ifValue : String -> (String -> List Step) -> Step
+ifValue selector f =
+    BranchString (getValue selector) f
+
+
+{-| Executes the list of steps the passed function returns depending
+on whether or not the input field is enabled
+-}
+ifExists : String -> (Bool -> List Step) -> Step
+ifExists selector f =
+    BranchBool (elementExists selector) f
+
+
+{-| Executes the list of steps the passed function returns depending
+on whether or not the element exists
+-}
+ifEnabled : String -> (Bool -> List Step) -> Step
+ifEnabled selector f =
+    BranchBool (elementEnabled selector) f
+
+
+{-| Executes the list of steps the passed function returns depending
+on whether or not the element is visible
+-}
+ifVisible : String -> (Bool -> List Step) -> Step
+ifVisible selector f =
+    BranchBool (elementVisible selector) f
+
+
+{-| Executes the list of steps the passed function returns depending
+on whether or not the element is visible within the viewport
+-}
+ifVisibleWithinViewport : String -> (Bool -> List Step) -> Step
+ifVisibleWithinViewport selector f =
+    BranchBool (elementVisibleWithinViewport selector) f
+
+
+{-| Executes the list of steps the passed function returns depending
+on whether or not the options in the select box is selected
+-}
+ifOptionIsSelected : String -> (Bool -> List Step) -> Step
+ifOptionIsSelected selector f =
+    BranchBool (optionIsSelected selector) f

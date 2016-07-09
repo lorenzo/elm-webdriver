@@ -3,7 +3,7 @@ port module Main exposing (..)
 import Html
 import Html.App as App
 import Webdriver as W exposing (..)
-import Webdriver.Branch exposing (whenCookieExists)
+import Webdriver.Branch exposing (ifCookieExists)
 
 
 main : Program Never
@@ -37,7 +37,7 @@ actions =
     [ visit "https://bownty.dk/go/62964387"
     , pause 3000
     , click "#tilbudibyen_c1_right_box_bottom_btn_buy"
-    , whenCookieExists "subscribed_nn" closePopup
+    , ifCookieExists "subscribed_nn" closePopup
     , click "//*[@id=\"header_buttons_box\"]/div[3]/div/button"
     , setValue "#login_username" "jon"
     , appendValue "#login_username" "@gmail.com"
