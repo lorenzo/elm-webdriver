@@ -354,7 +354,6 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
         message: error.message
       }
     };
-    console.log(error);
 
     switch (error.type) {
         case "NoSuchElement" :

@@ -40,14 +40,16 @@ will automatically fail.
 -}
 cookie : String -> (String -> Expectation) -> Step
 cookie name f =
-    AssertionMaybe (getCookie name)
+    AssertionMaybe
+        ("Check the cookie <" ++ name ++ "> value")
+        (getCookie name)
         (\res ->
             case res of
                 Just value ->
                     f value
 
                 _ ->
-                    Expect.fail <| "The cookie " ++ name ++ " does not exist"
+                    Expect.fail "The cookie does not exist"
         )
 
 
@@ -58,8 +60,9 @@ cookie name f =
 cookieExists : String -> Step
 cookieExists name =
     AssertionBool
+        ("Check the cookie <" ++ name ++ "> prensence")
         (Webdriver.Step.cookieExists name)
-        (Expect.true <| "The cookie " ++ name ++ " was expected to exist.")
+        (Expect.true <| "The cookie is not present.")
 
 
 {-| Asserts that a cookie has not been set.
@@ -69,8 +72,9 @@ cookieExists name =
 cookieNotExists : String -> Step
 cookieNotExists name =
     AssertionBool
+        ("Check the cookie <" ++ name ++ "> presence")
         (Webdriver.Step.cookieNotExists name)
-        (Expect.true <| "The cookie " ++ name ++ " was not expected to be present.")
+        (Expect.true <| "The cookie was present")
 
 
 {-| Asserts the value of the current url.
@@ -78,8 +82,8 @@ cookieNotExists name =
     url <| Expect.equal "https://google.com"
 -}
 url : (String -> Expectation) -> Step
-url f =
-    AssertionString getUrl f
+url fn =
+    AssertionString "Check the current URL" getUrl fn
 
 
 {-| Asserts the title tag of the current page.
@@ -87,8 +91,8 @@ url f =
     tile <| Expect.equal "This is the page title"
 -}
 title : (String -> Expectation) -> Step
-title f =
-    AssertionString getTitle f
+title fn =
+    AssertionString "Check the page title" getTitle fn
 
 
 {-| Asserts the html source of the current page.
@@ -97,8 +101,8 @@ title f =
         String.contains "Saved successfully" >> Expect.true "Expected a success message"
 -}
 pageHTML : (String -> Expectation) -> Step
-pageHTML f =
-    AssertionString getPageHTML f
+pageHTML fn =
+    AssertionString "Check the page HTML source" getPageHTML fn
 
 
 {-| Assets the number of elements matching a selector
@@ -106,8 +110,11 @@ pageHTML f =
     elementCount "#loginForm input" <| Expect.atLeast 2
 -}
 elementCount : String -> (Int -> Expectation) -> Step
-elementCount selector f =
-    AssertionInt (countElements selector) f
+elementCount selector fn =
+    AssertionInt
+        ("Check the number of elements in <" ++ selector ++ ">")
+        (countElements selector)
+        fn
 
 
 {-| Asserts the value of an attribute for a given element. Only one element may be matched by the selector.
@@ -116,16 +123,17 @@ If the attribute is not present in the element, the assertion will automatically
     attribute "input.username" "autocomplete" <| Expect.equal "off"
 -}
 attribute : String -> String -> (String -> Expectation) -> Step
-attribute selector name f =
+attribute selector name fn =
     AssertionMaybe
+        ("Check the <" ++ name ++ "> attribute of the element <" ++ selector ++ ">")
         (getAttribute selector name)
         (\res ->
             case res of
                 Just attr ->
-                    f attr
+                    fn attr
 
                 _ ->
-                    Expect.fail <| "The attribute '" ++ name ++ "' for  '" ++ selector ++ "' is not present"
+                    Expect.fail "The attribute is not present"
         )
 
 
@@ -135,16 +143,17 @@ If the attribute is not present in the element, the assertion will automatically
     css "input.username" "color" <| Expect.equal "#000000"
 -}
 css : String -> String -> (String -> Expectation) -> Step
-css selector name f =
+css selector name fn =
     AssertionMaybe
+        ("Check the <" ++ name ++ "> css property of the element <" ++ selector ++ ">")
         (getCssProperty selector name)
         (\res ->
             case res of
                 Just attr ->
-                    f attr
+                    fn attr
 
                 _ ->
-                    Expect.fail <| "The css property '" ++ name ++ "' for  '" ++ selector ++ "' is not present"
+                    Expect.fail "The css property is not present"
         )
 
 
@@ -153,8 +162,11 @@ css selector name f =
     elementHTML "#username" <| Expect.equal "<input id='username' value='jon' />"
 -}
 elementHTML : String -> (String -> Expectation) -> Step
-elementHTML selector f =
-    AssertionString (getElementHTML selector) f
+elementHTML selector fn =
+    AssertionString
+        ("Check the HTML for the element <" ++ selector ++ ">")
+        (getElementHTML selector)
+        fn
 
 
 {-| Asserts the text node of an element. Only one element may be matched by the selector.
@@ -162,8 +174,11 @@ elementHTML selector f =
     elementText "p.intro" <| Expect.equal "Welcome to the site!"
 -}
 elementText : String -> (String -> Expectation) -> Step
-elementText selector f =
-    AssertionString (getText selector) f
+elementText selector fn =
+    AssertionString
+        ("Check the text for the element <" ++ selector ++ ">")
+        (getText selector)
+        fn
 
 
 {-| Asserts the value of an input element. Only one element may be matched by the selector.
@@ -171,8 +186,11 @@ elementText selector f =
     inputValue "#username" <| Expect.equal "jon_snow"
 -}
 inputValue : String -> (String -> Expectation) -> Step
-inputValue selector f =
-    AssertionString (getValue selector) f
+inputValue selector fn =
+    AssertionString
+        ("Check the value for the input <" ++ selector ++ ">")
+        (getValue selector)
+        fn
 
 
 {-| Asserts that an element exists in the page. Only one element may be matched by the selector.
@@ -181,12 +199,14 @@ inputValue selector f =
 -}
 exists : String -> Step
 exists selector =
-    AssertionBool (elementExists selector)
+    AssertionBool
+        ("Check for the element <" ++ selector ++ "> to exist")
+        (elementExists selector)
         (\res ->
             if res then
                 Expect.pass
             else
-                Expect.fail <| "The element '" ++ selector ++ "' was expected to be present"
+                Expect.fail "The element does not exist"
         )
 
 
@@ -196,12 +216,14 @@ exists selector =
 -}
 inputEnabled : String -> Step
 inputEnabled selector =
-    AssertionBool (elementEnabled selector)
+    AssertionBool
+        ("Check for the input <" ++ selector ++ "> to be enabled")
+        (elementEnabled selector)
         (\res ->
             if res then
                 Expect.pass
             else
-                Expect.fail <| "The input element '" ++ selector ++ "' was expected to be enabled"
+                Expect.fail "The input element is not enabled"
         )
 
 
@@ -211,12 +233,14 @@ inputEnabled selector =
 -}
 visible : String -> Step
 visible selector =
-    AssertionBool (elementVisible selector)
+    AssertionBool
+        ("Check for the element <" ++ selector ++ "> to be visible")
+        (elementVisible selector)
         (\res ->
             if res then
                 Expect.pass
             else
-                Expect.fail <| "The input element '" ++ selector ++ "' was expected to be visible"
+                Expect.fail "The element is not visible"
         )
 
 
@@ -226,7 +250,9 @@ visible selector =
 -}
 visibleWithinViewport : String -> Step
 visibleWithinViewport selector =
-    AssertionBool (elementVisibleWithinViewport selector)
+    AssertionBool
+        ("Check for the element <" ++ selector ++ "> to be visible within the viewport")
+        (elementVisibleWithinViewport selector)
         (\res ->
             if res then
                 Expect.pass
@@ -241,12 +267,14 @@ visibleWithinViewport selector =
 -}
 optionSelected : String -> Step
 optionSelected selector =
-    AssertionBool (optionIsSelected selector)
+    AssertionBool
+        ("Check for the option <" ++ selector ++ "> to be selected")
+        (optionIsSelected selector)
         (\res ->
             if res then
                 Expect.pass
             else
-                Expect.fail <| "The option '" ++ selector ++ "' was expected to be selected"
+                Expect.fail "The option is not selected"
         )
 
 
@@ -255,8 +283,11 @@ optionSelected selector =
     elementSize ".logo" <| (fst >> Expect.equal 100)
 -}
 elementSize : String -> (( Int, Int ) -> Expectation) -> Step
-elementSize selector f =
-    AssertionGeometry (getElementSize selector) f
+elementSize selector fn =
+    AssertionGeometry
+        ("Check the size of the element <" ++ selector ++ ">")
+        (getElementSize selector)
+        fn
 
 
 {-| Asserts the position (x, y) of an element. Only one element may be matched by the selector.
@@ -264,8 +295,11 @@ elementSize selector f =
     elementPosition ".logo" <| (snd >> Expect.atLeast 330)
 -}
 elementPosition : String -> (( Int, Int ) -> Expectation) -> Step
-elementPosition selector f =
-    AssertionGeometry (getElementPosition selector) f
+elementPosition selector fn =
+    AssertionGeometry
+        ("Check the position of the element <" ++ selector ++ ">")
+        (getElementPosition selector)
+        fn
 
 
 {-| Asserts the position (x, y) of an element relative to the viewport.
@@ -274,5 +308,8 @@ Only one element may be matched by the selector.
     elementViewPosition ".logo" <| (snd >> Expect.atLeast 330)
 -}
 elementViewPosition : String -> (( Int, Int ) -> Expectation) -> Step
-elementViewPosition selector f =
-    AssertionGeometry (getElementViewPosition selector) f
+elementViewPosition selector fn =
+    AssertionGeometry
+        ("Check the position of the element <" ++ selector ++ "> relative to the viewport")
+        (getElementViewPosition selector)
+        fn

@@ -5,6 +5,7 @@ import Html.App as App
 import Webdriver as W exposing (..)
 import Webdriver.Branch exposing (ifElementCount)
 import Webdriver.Assert exposing (..)
+import String
 import Expect
 
 
@@ -23,8 +24,12 @@ type alias Model =
     }
 
 
+type alias Summary =
+    { output : String, passed : Int, failed : Int }
+
+
 type Msg
-    = EmitLog (List Expectation)
+    = EmitLog Summary
     | Webdriver W.Msg
 
 
@@ -36,22 +41,13 @@ initModel =
 
 actions : List Step
 actions =
-    [ visit "https://bownty.dk/go/62964387"
-    , pause 5000
+    [ visit "https://google.com"
     , title <| Expect.equal "this will fail!"
-    , click "#tilbudibyen_c1_right_box_bottom_btn_buy"
-    , ifCookieExists "subscribed_nn" closePopup
-    , click "//*[@id=\"header_buttons_box\"]/div[3]/div/button"
-    , setValue "#login_username" "jon"
-    , appendValue "#login_username" "@gmail.com"
-    , setValue "#login_password" "tib251"
-    , submitForm ".loginForm"
-    , visit "http://tilbudibyen.dk/basket"
-    , setValue "#firstname" "Jon"
-    , setValue "#lastname" "Snow"
-    , setValue "#address_number" "5"
-    , setValue "#postal_code" "2300"
-    , setValue "#mobile" "31755599"
+    , elementCount "input" <| Expect.atLeast 1
+    , setValue "input[name='q']" "Elm lang"
+    , elementText "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a" <| Expect.equal "Elm is the best"
+    , click "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a"
+    , pause 5000
     ]
 
 
@@ -79,19 +75,63 @@ update msg model =
                     in
                         ( { model | session = session }, Cmd.map Webdriver next )
 
-        EmitLog expectations ->
-            let
-                log =
-                    Debug.log "Result" expectations
-            in
-                ( model, Cmd.none )
+        EmitLog output ->
+            ( model, printLog output )
 
 
-collectLog : W.Model -> List Expectation
+collectLog : W.Model -> Summary
 collectLog ( _, expectations, _ ) =
     expectations
         |> List.filterMap identity
         |> List.reverse
+        |> toOutput { output = "", passed = 0, failed = 0 }
+
+
+toOutput : Summary -> List StepResult -> Summary
+toOutput summary expectations =
+    case expectations of
+        (StepResult desc x) :: xs ->
+            toOutput (fromExpectation desc x summary) xs
+
+        [] ->
+            summary
+
+
+fromExpectation : String -> Expectation -> Summary -> Summary
+fromExpectation description expectation summary =
+    case Expect.getFailure expectation of
+        Nothing ->
+            { summary
+                | output = summary.output ++ "✅  " ++ description
+                , passed = summary.passed + 1
+            }
+
+        Just { given, message } ->
+            let
+                heading =
+                    "❌  " ++ description ++ "\n\n"
+
+                prefix =
+                    if String.isEmpty given then
+                        heading
+                    else
+                        heading ++ given ++ "\n\n"
+
+                newOutput =
+                    "\n\n" ++ (prefix ++ indentLines message) ++ "\n"
+            in
+                { output = summary.output ++ newOutput
+                , failed = summary.failed + 1
+                , passed = summary.passed
+                }
+
+
+indentLines : String -> String
+indentLines str =
+    str
+        |> String.split "\n"
+        |> List.map ((++) "    ")
+        |> String.join "\n"
 
 
 
@@ -99,6 +139,9 @@ collectLog ( _, expectations, _ ) =
 
 
 port begin : (String -> msg) -> Sub msg
+
+
+port printLog : Summary -> Cmd msg
 
 
 subscriptions : model -> Sub Msg

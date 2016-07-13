@@ -49,11 +49,11 @@ type Step
     | BranchBool BoolStep (Bool -> List Step)
     | BranchGeometry GeometryStep (( Int, Int ) -> List Step)
     | BranchInt IntStep (Int -> List Step)
-    | AssertionMaybe MaybeStep (Maybe String -> Expectation)
-    | AssertionString StringStep (String -> Expectation)
-    | AssertionBool BoolStep (Bool -> Expectation)
-    | AssertionGeometry GeometryStep (( Int, Int ) -> Expectation)
-    | AssertionInt IntStep (Int -> Expectation)
+    | AssertionMaybe String MaybeStep (Maybe String -> Expectation)
+    | AssertionString String StringStep (String -> Expectation)
+    | AssertionBool String BoolStep (Bool -> Expectation)
+    | AssertionGeometry String GeometryStep (( Int, Int ) -> Expectation)
+    | AssertionInt String IntStep (Int -> Expectation)
 
 
 type UnitStep
