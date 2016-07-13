@@ -87,6 +87,7 @@ module Webdriver
 import Webdriver.LowLevel as Wd exposing (Error, Browser, Options)
 import Webdriver.Step exposing (..)
 import Task exposing (Task, perform)
+import Expect exposing (pass, fail)
 
 
 {-| The internal messages passed in this module
@@ -94,9 +95,10 @@ import Task exposing (Task, perform)
 type Msg
     = Start Options
     | Initiated Wd.Browser
-    | Process Expectation
+    | Process (Maybe Expectation)
     | ProcessBranch (List Step)
     | OnError Wd.Error
+    | Finish
 
 
 {-| The valid actions that can be executed in the browser
@@ -110,13 +112,13 @@ type alias Selector =
 
 
 type alias Expectation =
-    Webdriver.Step.Expectation
+    Expect.Expectation
 
 
 {-| The model used by this module to represent its state
 -}
 type alias Model =
-    ( Maybe Wd.Browser, List Expectation, List Step )
+    ( Maybe Wd.Browser, List (Maybe Expectation), List Step )
 
 
 {-| Initializes a model with the give list of steps to perform
@@ -136,25 +138,25 @@ update msg model =
             ( model, perform OnError Initiated (Wd.open options |> Task.map (\( _, b ) -> b)) )
 
         ( ( _, exs, actions ), Initiated browser ) ->
-            ( ( Just browser, exs, actions ), perform OnError (always (Process Pass)) (Task.succeed ()) )
+            update (Process Nothing) ( Just browser, exs, actions )
 
         ( ( Just browser, exs, (ReturningUnit End) :: rest ), Process previousExpect ) ->
-            ( ( Nothing, previousExpect :: exs, [] ), process end browser )
+            ( ( Nothing, previousExpect :: exs, [] ), finishSession browser )
 
         -- Automatically ending the session on last step
         ( ( Just browser, exs, [] ), Process previousExpect ) ->
-            ( ( Nothing, previousExpect :: exs, [] ), process end browser )
+            ( ( Nothing, previousExpect :: exs, [] ), finishSession browser )
 
         ( ( Just browser, exs, action :: rest ), Process previousExpect ) ->
             ( ( Just browser, previousExpect :: exs, rest ), process action browser )
 
-        ( ( Just browser, expectations, actions ), OnError error ) ->
+        ( ( Just browser, exs, actions ), OnError error ) ->
             let
                 message =
-                    handleError error
+                    fail <| errorMessage error
             in
                 -- Automatically ending the session on error
-                ( ( Nothing, (Fail message) :: expectations, actions ), Wd.end browser |> toCmd )
+                update (Process <| Just message) ( Just browser, exs, [] )
 
         -- Processing a branch means that we need to process the branch actions and the continue with the normal
         -- processing
@@ -165,23 +167,32 @@ update msg model =
             ( model, Cmd.none )
 
 
-handleError : Wd.Error -> String
-handleError error =
+errorMessage : Wd.Error -> String
+errorMessage error =
     case error of
         Wd.ConnectionError { message } ->
-            Debug.log "Error" <| "Could not connect to server: " ++ message
+            "Could not connect to server: " ++ message
 
         Wd.MissingElement { message, selector } ->
-            Debug.log "Error" <| "The element you are trying to reach is missing" ++ message
+            "The element you are trying to reach is missing. " ++ message
 
         Wd.UnreachableElement { message, selector } ->
-            Debug.log "Error" <| "The element you are trying to reach is not visible" ++ message
+            "The element you are trying to reach is not visible. " ++ message
+
+        Wd.TooManyElements { message, selector } ->
+            message
 
         Wd.FailedElementPrecondition { message, selector } ->
-            Debug.log "Error" <| "You were waiting for an element, but it is not as you expected" ++ message
+            "You were waiting for an element, but it is not as you expected. " ++ message
 
         Wd.UnknownError { message } ->
-            Debug.log "Error" <| "Oops, something wrong happened" ++ message
+            "Oops, something wrong happened. " ++ message
+
+
+finishSession : Wd.Browser -> Cmd Msg
+finishSession browser =
+    Wd.end browser
+        |> perform (always Finish) (always Finish)
 
 
 (&>) : Task x y -> Task x z -> Task x z
@@ -205,15 +216,55 @@ inputAutoWait selector browser =
         &> Wd.waitForEnabled selector 5000 browser
 
 
+validateSelector : Selector -> Wd.Browser -> Task Wd.Error ()
+validateSelector selector browser =
+    Wd.countElements selector browser
+        `Task.andThen`
+            (\count ->
+                if count > 1 then
+                    Task.fail
+                        (Wd.TooManyElements
+                            { errorType = "TooManyElements"
+                            , message = "The selector returned " ++ (toString count) ++ " elements, excpecting 1"
+                            , selector = selector
+                            }
+                        )
+                else
+                    Task.succeed ()
+            )
+
+
+convertAssertion : (a -> Expectation) -> Task Wd.Error a -> Cmd Msg
+convertAssertion assert task =
+    task
+        |> Task.map (assert >> Just)
+        |> Task.perform OnError Process
+
+
 process : Step -> Wd.Browser -> Cmd Msg
 process action browser =
     let
         command =
             case Debug.log "processing" action of
-                Assertion step assert ->
+                AssertionString step assert ->
                     processStringStep step browser
-                        |> Task.map assert
-                        |> Task.perform OnError Process
+                        |> convertAssertion assert
+
+                AssertionMaybe step assert ->
+                    processMaybeStep step browser
+                        |> convertAssertion assert
+
+                AssertionGeometry step assert ->
+                    processGeometryStep step browser
+                        |> convertAssertion assert
+
+                AssertionBool step assert ->
+                    processBoolStep step browser
+                        |> convertAssertion assert
+
+                AssertionInt step assert ->
+                    processIntStep step browser
+                        |> convertAssertion assert
 
                 ReturningUnit step ->
                     processStep step browser
@@ -230,6 +281,14 @@ process action browser =
                 BranchBool step decider ->
                     processBoolStep step browser
                         |> performBranch decider
+
+                BranchGeometry step decider ->
+                    processGeometryStep step browser
+                        |> performBranch decider
+
+                BranchInt step decider ->
+                    processIntStep step browser
+                        |> performBranch decider
     in
         command
 
@@ -245,7 +304,7 @@ resolveBranch : (a -> List Step) -> a -> Msg
 resolveBranch decider value =
     case decider value of
         [] ->
-            Process Pass
+            Process (Just pass)
 
         list ->
             ProcessBranch list
@@ -259,6 +318,7 @@ processStringStep step browser =
 
         GetHtml selector ->
             existAutoWait selector browser
+                &> validateSelector selector browser
                 &> Wd.getElementHTML selector browser
 
         GetSource ->
@@ -269,10 +329,12 @@ processStringStep step browser =
 
         GetText selector ->
             existAutoWait selector browser
+                &> validateSelector selector browser
                 &> Wd.getText selector browser
 
         GetValue selector ->
             existAutoWait selector browser
+                &> validateSelector selector browser
                 &> Wd.getValue selector browser
 
 
@@ -284,10 +346,12 @@ processMaybeStep step browser =
 
         GetAttribute selector name ->
             existAutoWait selector browser
+                &> validateSelector selector browser
                 &> Wd.getAttribute selector name browser
 
         GetCss selector name ->
             existAutoWait selector browser
+                &> validateSelector selector browser
                 &> Wd.getCssProperty selector name browser
 
 
@@ -321,6 +385,35 @@ processBoolStep step browser =
                 &> Wd.optionIsSelected selector browser
 
 
+processGeometryStep : GeometryStep -> Wd.Browser -> Task Error ( Int, Int )
+processGeometryStep step browser =
+    case step of
+        GetElementSize selector ->
+            existAutoWait selector browser
+                &> validateSelector selector browser
+                &> Wd.getElementSize selector browser
+                |> Task.map (\{ width, height } -> ( width, height ))
+
+        GetElementPosition selector ->
+            existAutoWait selector browser
+                &> validateSelector selector browser
+                &> Wd.getElementPosition selector browser
+                |> Task.map (\{ x, y } -> ( x, y ))
+
+        GetElementViewPosition selector ->
+            existAutoWait selector browser
+                &> validateSelector selector browser
+                &> Wd.getElementViewPosition selector browser
+                |> Task.map (\{ x, y } -> ( x, y ))
+
+
+processIntStep : IntStep -> Wd.Browser -> Task Error Int
+processIntStep step browser =
+    case step of
+        CountElements selector ->
+            Wd.countElements selector browser
+
+
 processStep : UnitStep -> Wd.Browser -> Task Error ()
 processStep step browser =
     case step of
@@ -328,35 +421,43 @@ processStep step browser =
             Wd.url url browser
 
         Click selector ->
-            autoWait selector browser
+            validateSelector selector browser
+                &> autoWait selector browser
                 &> Wd.click selector browser
 
         SetValue selector value ->
             inputAutoWait selector browser
+                &> validateSelector selector browser
                 &> Wd.setValue selector value browser
 
         AppendValue selector value ->
-            inputAutoWait selector browser
+            validateSelector selector browser
+                &> inputAutoWait selector browser
                 &> Wd.appendValue selector value browser
 
         ClearValue selector ->
-            inputAutoWait selector browser
+            validateSelector selector browser
+                &> inputAutoWait selector browser
                 &> Wd.clearValue selector browser
 
         SelectByValue selector value ->
-            inputAutoWait selector browser
+            validateSelector selector browser
+                &> inputAutoWait selector browser
                 &> Wd.selectByValue selector value browser
 
         SelectByIndex selector index ->
-            inputAutoWait selector browser
+            validateSelector selector browser
+                &> inputAutoWait selector browser
                 &> Wd.selectByIndex selector index browser
 
         SelectByText selector text ->
-            inputAutoWait selector browser
+            validateSelector selector browser
+                &> inputAutoWait selector browser
                 &> Wd.selectByText selector text browser
 
         Submit selector ->
-            Wd.submitForm selector browser
+            validateSelector selector browser
+                &> Wd.submitForm selector browser
 
         WaitForExist selector timeout ->
             Wd.waitForExist selector timeout browser
@@ -424,7 +525,7 @@ processStep step browser =
 
 toCmd : Task Error a -> Cmd Msg
 toCmd =
-    perform OnError (always (Process Pass))
+    perform OnError (always <| Process Nothing)
 
 
 {-| Bare minimum options for running selenium

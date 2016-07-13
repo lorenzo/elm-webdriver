@@ -5,7 +5,8 @@ module Webdriver.Step
         , MaybeStep(..)
         , StringStep(..)
         , BoolStep(..)
-        , Expectation(..)
+        , GeometryStep(..)
+        , IntStep(..)
         , getCookie
         , cookieExists
         , cookieNotExists
@@ -22,16 +23,21 @@ module Webdriver.Step
         , elementVisible
         , elementVisibleWithinViewport
         , optionIsSelected
+        , getElementSize
+        , getElementPosition
+        , getElementViewPosition
+        , countElements
         )
+
+import Expect
 
 
 type alias Selector =
     String
 
 
-type Expectation
-    = Pass
-    | Fail String
+type alias Expectation =
+    Expect.Expectation
 
 
 {-| The valid actions that can be executed in the browser
@@ -41,7 +47,13 @@ type Step
     | BranchMaybe MaybeStep (Maybe String -> List Step)
     | BranchString StringStep (String -> List Step)
     | BranchBool BoolStep (Bool -> List Step)
-    | Assertion StringStep (String -> Expectation)
+    | BranchGeometry GeometryStep (( Int, Int ) -> List Step)
+    | BranchInt IntStep (Int -> List Step)
+    | AssertionMaybe MaybeStep (Maybe String -> Expectation)
+    | AssertionString StringStep (String -> Expectation)
+    | AssertionBool BoolStep (Bool -> Expectation)
+    | AssertionGeometry GeometryStep (( Int, Int ) -> Expectation)
+    | AssertionInt IntStep (Int -> Expectation)
 
 
 type UnitStep
@@ -100,6 +112,16 @@ type BoolStep
     | ElementVisible String
     | ElementViewportVisible String
     | OptionSelected String
+
+
+type GeometryStep
+    = GetElementPosition Selector
+    | GetElementViewPosition Selector
+    | GetElementSize Selector
+
+
+type IntStep
+    = CountElements Selector
 
 
 {-| Returns the value of a cookie by name
@@ -167,35 +189,35 @@ getTitle =
 
 {-| Returns the concatenation of all text nodes for the element
 -}
-getText : String -> StringStep
+getText : Selector -> StringStep
 getText selector =
     GetText selector
 
 
 {-| Returns the value for the given input
 -}
-getValue : String -> StringStep
+getValue : Selector -> StringStep
 getValue selector =
     GetValue selector
 
 
 {-| Returns whether or not an element exists in the page
 -}
-elementExists : String -> BoolStep
+elementExists : Selector -> BoolStep
 elementExists selector =
     ElementExists selector
 
 
 {-| Returns whether or not an input is enabled
 -}
-elementEnabled : String -> BoolStep
+elementEnabled : Selector -> BoolStep
 elementEnabled selector =
     ElementEnabled selector
 
 
 {-| Returns whether or not an element is visible
 -}
-elementVisible : String -> BoolStep
+elementVisible : Selector -> BoolStep
 elementVisible selector =
     ElementVisible selector
 
@@ -203,13 +225,42 @@ elementVisible selector =
 {-| Returns whether or not an element is visible within
 the viewport
 -}
-elementVisibleWithinViewport : String -> BoolStep
+elementVisibleWithinViewport : Selector -> BoolStep
 elementVisibleWithinViewport selector =
     ElementViewportVisible selector
 
 
 {-| Returns whether or not an select option is currently selected
 -}
-optionIsSelected : String -> BoolStep
+optionIsSelected : Selector -> BoolStep
 optionIsSelected selector =
     OptionSelected selector
+
+
+{-| Returns the size for the given element
+-}
+getElementSize : Selector -> GeometryStep
+getElementSize selector =
+    GetElementSize selector
+
+
+{-| Returns the coordinates for the given element
+-}
+getElementPosition : Selector -> GeometryStep
+getElementPosition selector =
+    GetElementPosition selector
+
+
+{-| Returns the coordinates for the given element
+relative to the current viewport.
+-}
+getElementViewPosition : Selector -> GeometryStep
+getElementViewPosition selector =
+    GetElementViewPosition selector
+
+
+{-| Returns the number of elements matching the provided selector
+-}
+countElements : Selector -> IntStep
+countElements selector =
+    CountElements selector

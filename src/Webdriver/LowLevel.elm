@@ -58,6 +58,7 @@ module Webdriver.LowLevel
         , elementVisibleWithinViewport
         , optionIsSelected
         , cookieExists
+        , countElements
         )
 
 {-| Offers access to the webdriver.io js library
@@ -69,7 +70,7 @@ module Webdriver.LowLevel
 ## Navigation
 @docs open, url, click, close, end, switchToFrame
 
-## Forms
+# Forms
 
 @docs selectByIndex, selectByValue, selectByText, setValue, appendValue
     ,clearValue, submitForm
@@ -92,9 +93,9 @@ module Webdriver.LowLevel
 
 @docs pageScreenshot, savePageScreenshot, viewportScreenshot
 
-## Custom
+## Utilities
 
-@docs triggerClick
+@docs countElements, triggerClick
 
 ## Debugging
 
@@ -114,6 +115,7 @@ module Webdriver.LowLevel
 ## Cokies
 
 @docs getCookie, cookieExists
+
 
 -}
 
@@ -147,6 +149,7 @@ type Error
     = ConnectionError (ErrorDetails (WithScreenshot {}))
     | MissingElement (ErrorDetails (WithSelector {}))
     | UnreachableElement (ErrorDetails (WithScreenshot (WithSelector {})))
+    | TooManyElements (ErrorDetails (WithSelector {}))
     | FailedElementPrecondition (ErrorDetails (WithSelector {}))
     | UnknownError (ErrorDetails (WithScreenshot {}))
 
@@ -566,3 +569,10 @@ cookieExists name browser =
                 else
                     True
             )
+
+
+{-| Returns the count of elements matching the provided selector
+-}
+countElements : String -> Browser -> Task Error Int
+countElements =
+    Native.Webdriver.countElements

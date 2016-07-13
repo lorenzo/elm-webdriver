@@ -319,6 +319,33 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     });
   }
 
+  function getElementSize(selector, client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.getElementSize(selector), {selector: selector});
+    });
+  }
+
+  function getLocation(selector, client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.getLocation(selector), {selector: selector});
+    });
+  }
+
+  function getLocationInView(selector, client) {
+    return nativeBinding(function (c) {
+      arity1ReturningExecute(c, client.getLocationInView(selector), {selector: selector});
+    });
+  }
+
+  function countElements(selector, client) {
+    return nativeBinding(function (c) {
+      var promise = client.selectorExecute(selector, function (elements) {
+        return elements.length;
+      });
+      arity1ReturningExecute(c, promise , {selector: selector});
+    });
+  }
+
   function handleError(error, callback, context) {
     var tag = {
       ctor: 'UnknownError',
@@ -327,6 +354,7 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
         message: error.message
       }
     };
+    console.log(error);
 
     switch (error.type) {
         case "NoSuchElement" :
@@ -390,6 +418,10 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     isEnabled: F2(isEnabled),
     isVisible: F2(isVisible),
     isVisibleWithinViewport: F2(isVisibleWithinViewport),
-    isSelected: F2(isSelected)
+    isSelected: F2(isSelected),
+    getElementSize: F2(getElementSize),
+    getLocation: F2(getLocation),
+    getLocationInView: F2(getLocationInView),
+    countElements: F2(countElements)
   };
 }();

@@ -3,7 +3,9 @@ port module Main exposing (..)
 import Html
 import Html.App as App
 import Webdriver as W exposing (..)
-import Webdriver.Branch exposing (ifCookieExists)
+import Webdriver.Branch exposing (ifElementCount)
+import Webdriver.Assert exposing (..)
+import Expect
 
 
 main : Program Never
@@ -22,7 +24,7 @@ type alias Model =
 
 
 type Msg
-    = NoOp
+    = EmitLog (List Expectation)
     | Webdriver W.Msg
 
 
@@ -35,7 +37,8 @@ initModel =
 actions : List Step
 actions =
     [ visit "https://bownty.dk/go/62964387"
-    , pause 3000
+    , pause 5000
+    , title <| Expect.equal "this will fail!"
     , click "#tilbudibyen_c1_right_box_bottom_btn_buy"
     , ifCookieExists "subscribed_nn" closePopup
     , click "//*[@id=\"header_buttons_box\"]/div[3]/div/button"
@@ -52,25 +55,43 @@ actions =
     ]
 
 
-closePopup : List Step
-closePopup =
-    [ waitForVisible ".what2doClose" 10000
-    , click ".what2doClose.close"
-    ]
+closePopup : Int -> List Step
+closePopup total =
+    let
+        a =
+            Debug.log "size" total
+    in
+        []
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Webdriver action ->
-            let
-                ( session, next ) =
-                    W.update action model.session
-            in
-                ( { model | session = session }, Cmd.map Webdriver next )
+            case action of
+                W.Finish ->
+                    update (EmitLog <| collectLog model.session) model
 
-        NoOp ->
-            ( model, Cmd.none )
+                _ ->
+                    let
+                        ( session, next ) =
+                            W.update action model.session
+                    in
+                        ( { model | session = session }, Cmd.map Webdriver next )
+
+        EmitLog expectations ->
+            let
+                log =
+                    Debug.log "Result" expectations
+            in
+                ( model, Cmd.none )
+
+
+collectLog : W.Model -> List Expectation
+collectLog ( _, expectations, _ ) =
+    expectations
+        |> List.filterMap identity
+        |> List.reverse
 
 
 

@@ -9,12 +9,14 @@ state of the browser.
 
 ## Page properties
 
-@docs ifUrl, ifPageHTML, ifTitle
+@docs ifUrl, ifPageHTML, ifTitle, ifElementCount
 
 ## Element properties
 
 @docs ifAttribute, ifCss, ifElementHTML, ifText, ifValue, ifExists
 @docs ifEnabled, ifVisible, ifVisibleWithinViewport, ifOptionIsSelected
+@docs ifElementSize, ifElementPosition, ifElementViewPosition
+
 -}
 
 import Webdriver.Step exposing (..)
@@ -156,3 +158,35 @@ on whether or not the options in the select box is selected
 ifOptionIsSelected : String -> (Bool -> List Step) -> Step
 ifOptionIsSelected selector f =
     BranchBool (optionIsSelected selector) f
+
+
+{-| Executes the list of steps the passed function returns depending
+on the size (width, height) of the element
+-}
+ifElementSize : String -> (( Int, Int ) -> List Step) -> Step
+ifElementSize selector f =
+    BranchGeometry (getElementSize selector) f
+
+
+{-| Executes the list of steps the passed function returns depending
+on the location (x, y) of the element
+-}
+ifElementPosition : String -> (( Int, Int ) -> List Step) -> Step
+ifElementPosition selector f =
+    BranchGeometry (getElementPosition selector) f
+
+
+{-| Executes the list of steps the passed function returns depending
+on the location (x, y) of the element relative to the current viewport
+-}
+ifElementViewPosition : String -> (( Int, Int ) -> List Step) -> Step
+ifElementViewPosition selector f =
+    BranchGeometry (getElementViewPosition selector) f
+
+
+{-| Executes the list of steps the passed function returns depending
+on the number of elements returned by the selector
+-}
+ifElementCount : String -> (Int -> List Step) -> Step
+ifElementCount selector f =
+    BranchInt (countElements selector) f

@@ -7,13 +7,15 @@
         "src"
     ],
     "exposed-modules": [
-      "Webdriver",
-      "Webdriver.LowLevel",
-      "Webdriver.Branch"
+        "Webdriver",
+        "Webdriver.LowLevel",
+        "Webdriver.Assert",
+        "Webdriver.Branch"
     ],
     "native-modules": true,
     "dependencies": {
-        "elm-lang/core": "4.0.0 <= v < 5.0.0"
+        "elm-lang/core": "4.0.0 <= v < 5.0.0",
+        "project-fuzzball/test": "5.0.4 <= v < 6.0.0"
     },
     "elm-version": "0.17.0 <= v < 0.18.0"
 }
