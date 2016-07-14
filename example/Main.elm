@@ -3,24 +3,26 @@ port module Main exposing (..)
 import Html
 import Html.App as App
 import Webdriver as W exposing (..)
-import Webdriver.Branch exposing (ifElementCount)
 import Webdriver.Assert exposing (..)
 import String
+import Dict exposing (Dict)
 import Expect
 
 
 main : Program Never
 main =
     App.program
-        { init = initModel ! []
+        { init = begin basicOptions [ actions, actions2 ]
         , update = update
         , view = \_ -> Html.text "it works!"
-        , subscriptions = subscriptions
+        , subscriptions = always Sub.none
         }
 
 
 type alias Model =
-    { session : W.Model
+    { options : W.Options
+    , runs : List (List Step)
+    , sessions : Dict Int W.Model
     }
 
 
@@ -29,54 +31,103 @@ type alias Summary =
 
 
 type Msg
-    = EmitLog Summary
-    | Webdriver W.Msg
+    = Begin
+    | EmitLog Summary
+    | DriverMsg Int W.Msg
 
 
-initModel : Model
-initModel =
-    { session = init actions
+initModel : Options -> List (List Step) -> Model
+initModel options runs =
+    { runs = runs
+    , options = options
+    , sessions = Dict.empty
     }
+
+
+begin options steps =
+    update Begin (initModel options steps)
 
 
 actions : List Step
 actions =
     [ visit "https://google.com"
     , title <| Expect.equal "this will fail!"
-    , elementCount "input" <| Expect.atLeast 1
+    , elementCount "input[name='q']" <| Expect.atLeast 1
     , setValue "input[name='q']" "Elm lang"
-    , elementText "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a" <| Expect.equal "Elm is the best"
+    , elementText "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a" <|
+        Expect.equal "Elm is the best"
     , click "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a"
-    , pause 5000
+    , pause 2000
+    , title <|
+        Expect.equal "home"
     ]
 
 
-closePopup : Int -> List Step
-closePopup total =
-    let
-        a =
-            Debug.log "size" total
-    in
-        []
+actions2 : List Step
+actions2 =
+    [ visit "https://google.com"
+    , title <| Expect.equal "Google"
+    , elementCount "input[name='q']" <| Expect.atLeast 1
+    , setValue "input[name='q']" "Hacker News"
+    , elementText "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a" <|
+        Expect.equal "Hacker News"
+    , click "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a"
+    , pause 2000
+    , title <|
+        Expect.equal "home"
+    ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Webdriver action ->
-            case action of
-                W.Finish ->
-                    update (EmitLog <| collectLog model.session) model
+        Begin ->
+            dispatchTests model
+
+        DriverMsg i action ->
+            case Dict.get i model.sessions of
+                Just subModel ->
+                    delegateMessage i action subModel model
 
                 _ ->
-                    let
-                        ( session, next ) =
-                            W.update action model.session
-                    in
-                        ( { model | session = session }, Cmd.map Webdriver next )
+                    ( model, Cmd.none )
 
         EmitLog output ->
             ( model, printLog output )
+
+
+dispatchTests model =
+    let
+        dispatchHelper ( i, steps ) ( model', msgs ) =
+            let
+                ( wModel, wMsg ) =
+                    W.update (open model.options) (init steps)
+            in
+                ( { model' | sessions = Dict.insert i wModel model'.sessions }
+                , (Cmd.map (DriverMsg i) wMsg) :: msgs
+                )
+
+        nextState =
+            model.runs
+                |> List.indexedMap (,)
+                |> List.foldr (dispatchHelper) ( model, [] )
+    in
+        ( fst nextState, Cmd.batch (snd nextState) )
+
+
+delegateMessage i action subModel thisModel =
+    case action of
+        W.Finish ->
+            update
+                (EmitLog <| collectLog subModel)
+                { thisModel | sessions = Dict.remove i thisModel.sessions }
+
+        _ ->
+            let
+                ( session, next ) =
+                    W.update action subModel
+            in
+                ( { thisModel | sessions = Dict.insert i session thisModel.sessions }, Cmd.map (DriverMsg i) next )
 
 
 collectLog : W.Model -> Summary
@@ -138,12 +189,4 @@ indentLines str =
 -- PORTS
 
 
-port begin : (String -> msg) -> Sub msg
-
-
 port printLog : Summary -> Cmd msg
-
-
-subscriptions : model -> Sub Msg
-subscriptions _ =
-    begin (always <| Webdriver (open basicOptions))

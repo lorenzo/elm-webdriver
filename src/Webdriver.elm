@@ -4,6 +4,7 @@ module Webdriver
         , Step
         , StepResult(..)
         , Msg(..)
+        , Options
         , basicOptions
         , init
         , update
@@ -43,7 +44,7 @@ module Webdriver
 
 {-| A library to interface with Webdriver.io and produce commands
 
-@docs basicOptions, init, update, Model, Msg, Step, StepResult
+@docs basicOptions, init, update, Options, Model, Msg, Step, StepResult
 @docs open, visit, click, close, end, switchToFrame
 
 ## Forms
@@ -85,7 +86,7 @@ module Webdriver
 @docs triggerClick
 -}
 
-import Webdriver.LowLevel as Wd exposing (Error, Browser, Options)
+import Webdriver.LowLevel as Wd exposing (Error, Browser)
 import Webdriver.Step exposing (..)
 import Task exposing (Task, perform)
 import Expect exposing (pass, fail)
@@ -106,6 +107,12 @@ type Msg
 -}
 type alias Step =
     Webdriver.Step.Step
+
+
+{-| Driver options
+-}
+type alias Options =
+    Wd.Options
 
 
 type alias Selector =
