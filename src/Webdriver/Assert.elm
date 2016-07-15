@@ -112,7 +112,7 @@ pageHTML fn =
 elementCount : String -> (Int -> Expectation) -> Step
 elementCount selector fn =
     AssertionInt
-        ("Check the number of elements in <" ++ selector ++ ">")
+        ("Check the number of elements in < " ++ selector ++ " >")
         (countElements selector)
         fn
 
@@ -125,7 +125,7 @@ If the attribute is not present in the element, the assertion will automatically
 attribute : String -> String -> (String -> Expectation) -> Step
 attribute selector name fn =
     AssertionMaybe
-        ("Check the <" ++ name ++ "> attribute of the element <" ++ selector ++ ">")
+        ("Check the <" ++ name ++ "> attribute of the element < " ++ selector ++ " >")
         (getAttribute selector name)
         (\res ->
             case res of
@@ -145,7 +145,7 @@ If the attribute is not present in the element, the assertion will automatically
 css : String -> String -> (String -> Expectation) -> Step
 css selector name fn =
     AssertionMaybe
-        ("Check the <" ++ name ++ "> css property of the element <" ++ selector ++ ">")
+        ("Check the < " ++ name ++ " > css property of the element < " ++ selector ++ " >")
         (getCssProperty selector name)
         (\res ->
             case res of
@@ -164,7 +164,7 @@ css selector name fn =
 elementHTML : String -> (String -> Expectation) -> Step
 elementHTML selector fn =
     AssertionString
-        ("Check the HTML for the element <" ++ selector ++ ">")
+        ("Check the HTML for the element < " ++ selector ++ " >")
         (getElementHTML selector)
         fn
 
@@ -176,7 +176,7 @@ elementHTML selector fn =
 elementText : String -> (String -> Expectation) -> Step
 elementText selector fn =
     AssertionString
-        ("Check the text for the element <" ++ selector ++ ">")
+        ("Check the text for the element < " ++ selector ++ " >")
         (getText selector)
         fn
 
@@ -188,7 +188,7 @@ elementText selector fn =
 inputValue : String -> (String -> Expectation) -> Step
 inputValue selector fn =
     AssertionString
-        ("Check the value for the input <" ++ selector ++ ">")
+        ("Check the value for the input < " ++ selector ++ " >")
         (getValue selector)
         fn
 
@@ -200,7 +200,7 @@ inputValue selector fn =
 exists : String -> Step
 exists selector =
     AssertionBool
-        ("Check for the element <" ++ selector ++ "> to exist")
+        ("Check for the element < " ++ selector ++ " > to exist")
         (elementExists selector)
         (\res ->
             if res then
@@ -217,7 +217,7 @@ exists selector =
 inputEnabled : String -> Step
 inputEnabled selector =
     AssertionBool
-        ("Check for the input <" ++ selector ++ "> to be enabled")
+        ("Check for the input < " ++ selector ++ " > to be enabled")
         (elementEnabled selector)
         (\res ->
             if res then
@@ -234,7 +234,7 @@ inputEnabled selector =
 visible : String -> Step
 visible selector =
     AssertionBool
-        ("Check for the element <" ++ selector ++ "> to be visible")
+        ("Check for the element < " ++ selector ++ " > to be visible")
         (elementVisible selector)
         (\res ->
             if res then
@@ -251,7 +251,7 @@ visible selector =
 visibleWithinViewport : String -> Step
 visibleWithinViewport selector =
     AssertionBool
-        ("Check for the element <" ++ selector ++ "> to be visible within the viewport")
+        ("Check for the element < " ++ selector ++ " > to be visible within the viewport")
         (elementVisibleWithinViewport selector)
         (\res ->
             if res then
@@ -268,7 +268,7 @@ visibleWithinViewport selector =
 optionSelected : String -> Step
 optionSelected selector =
     AssertionBool
-        ("Check for the option <" ++ selector ++ "> to be selected")
+        ("Check for the option < " ++ selector ++ " > to be selected")
         (optionIsSelected selector)
         (\res ->
             if res then
@@ -285,7 +285,7 @@ optionSelected selector =
 elementSize : String -> (( Int, Int ) -> Expectation) -> Step
 elementSize selector fn =
     AssertionGeometry
-        ("Check the size of the element <" ++ selector ++ ">")
+        ("Check the size of the element < " ++ selector ++ " >")
         (getElementSize selector)
         fn
 
@@ -297,7 +297,7 @@ elementSize selector fn =
 elementPosition : String -> (( Int, Int ) -> Expectation) -> Step
 elementPosition selector fn =
     AssertionGeometry
-        ("Check the position of the element <" ++ selector ++ ">")
+        ("Check the position of the element < " ++ selector ++ " >")
         (getElementPosition selector)
         fn
 
@@ -310,6 +310,6 @@ Only one element may be matched by the selector.
 elementViewPosition : String -> (( Int, Int ) -> Expectation) -> Step
 elementViewPosition selector fn =
     AssertionGeometry
-        ("Check the position of the element <" ++ selector ++ "> relative to the viewport")
+        ("Check the position of the element < " ++ selector ++ " > relative to the viewport")
         (getElementViewPosition selector)
         fn

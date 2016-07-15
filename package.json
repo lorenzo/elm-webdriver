@@ -1,0 +1,33 @@
+{
+  "name": "elm-webdriver",
+  "version": "1.0.0",
+  "description": "Elm bridge for Webdriver.io and testing utilities",
+  "main": "index.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lorenzo/elm-webdriver.git"
+  },
+  "keywords": [
+    "elm",
+    "elmlang",
+    "webdriver",
+    "test"
+  ],
+  "author": "José Lorenzo Rodríguez",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/lorenzo/elm-webdriver/issues"
+  },
+  "homepage": "https://github.com/lorenzo/elm-webdriver#readme",
+  "dependencies": {
+    "chalk": "^1.1.3",
+    "chalkline": "0.0.5",
+    "webdriverio": "^4.2.1"
+  }
+}

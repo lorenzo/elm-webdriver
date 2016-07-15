@@ -10,7 +10,8 @@
         "Webdriver",
         "Webdriver.LowLevel",
         "Webdriver.Assert",
-        "Webdriver.Branch"
+        "Webdriver.Branch",
+        "Webdriver.Runner"
     ],
     "native-modules": true,
     "dependencies": {
