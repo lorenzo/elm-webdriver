@@ -72,6 +72,24 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     });
   }
 
+  function moveToObjectWithOffset(selector, x, y, client) {
+    if (x.ctor === "Nothing") {
+      x = undefined;
+    } else {
+      x = x._0;
+    }
+
+    if (y.ctor === "Nothing") {
+      y = undefined;
+    } else {
+      y = y._0;
+    }
+
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.moveToObject(selector, x, y), {selector: selector});
+    });
+  }
+
   function close(client) {
     return nativeBinding(function (c) {
       unitReturningExecute(c, client.close(), {});
@@ -378,6 +396,7 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     open: open,
     url: F2(url),
     click: F2(click),
+    moveToObjectWithOffset: F4(moveToObjectWithOffset),
     close: close,
     debug: debug,
     setValue: F3(setValue),

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+if [[ $# -gt 0 ]];
+then
+	FILE="$1".elm
+	shift
+else
+	FILE="Main.elm"
+fi
+
+MY_PATH=`dirname "$0"`
+TARGET=__main.js
+TARGET=`realpath $TARGET`
+
+elm-make "$FILE" --output "$TARGET" && /usr/bin/env node $MY_PATH/runner.js "$TARGET" $*
+
+EXIT=$?
+
+if [ -f "__main.js" ]
+then
+	rm $TARGET
+fi
+
+exit $EXIT

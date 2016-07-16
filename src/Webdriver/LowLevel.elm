@@ -7,6 +7,8 @@ module Webdriver.LowLevel
         , open
         , url
         , click
+        , moveTo
+        , moveToWithOffset
         , close
         , end
         , back
@@ -68,7 +70,8 @@ module Webdriver.LowLevel
 @docs Error, Browser, Options, Capabilities
 
 ## Navigation
-@docs open, url, click, close, end, switchToFrame
+
+@docs open, url, click, moveTo, moveToWithOffset, close, end, switchToFrame
 
 # Forms
 
@@ -188,6 +191,24 @@ url =
 click : String -> Browser -> Task Error ()
 click =
     Native.Webdriver.click
+
+
+{-| Moves the mouse to the middle of the specified element
+-}
+moveTo : String -> Browser -> Task Error ()
+moveTo selector =
+    moveToWithOffset selector Nothing Nothing
+
+
+{-| Moves the mouse to the middle of the specified element. This function
+takes two integers (offsetX and offsetY).
+
+If offsetX has a value, move relative to the top-left corner of the element on the X axis
+If offsetY has a value, move relative to the top-left corner of the element on the Y axis
+-}
+moveToWithOffset : String -> Maybe Int -> Maybe Int -> Browser -> Task Error ()
+moveToWithOffset =
+    Native.Webdriver.moveToObjectWithOffset
 
 
 {-| Closes the current browser window

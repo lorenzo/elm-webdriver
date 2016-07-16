@@ -1,6 +1,19 @@
 var cl = require('chalkline');
 var chalk = require('chalk');
-var elm = require('./main.js');
+
+if (process.argv.length < 3) {
+  throw 'A path to an Elm-compiled file is required';
+}
+
+var elm = require(process.argv[2]);
+
+if (typeof elm === 'undefined') {
+  throw 'Invalid Elm file. Make sure you provide a file compiled by Elm!'
+}
+
+if (typeof elm.Main === 'undefined' ) {
+  throw 'Main is not defined. Make sure your module is named Main.'
+}
 
 var main = elm.Main.worker();
 

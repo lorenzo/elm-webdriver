@@ -59,6 +59,8 @@ type Step
 type UnitStep
     = Visit String
     | Click Selector
+    | MoveTo Selector
+    | MoveToWithOffset Selector Int Int
     | AppendValue String String
     | ClearValue String
     | SetValue Selector String

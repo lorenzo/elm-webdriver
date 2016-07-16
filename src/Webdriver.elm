@@ -12,6 +12,8 @@ module Webdriver
         , visit
         , click
         , close
+        , moveTo
+        , moveToWithOffset
         , end
         , setValue
         , appendValue
@@ -45,7 +47,7 @@ module Webdriver
 {-| A library to interface with Webdriver.io and produce commands
 
 @docs basicOptions, init, update, Options, Model, Msg, Step, StepResult
-@docs open, visit, click, close, end, switchToFrame
+@docs open, visit, click, moveTo, moveToWithOffset, close, end, switchToFrame
 
 ## Forms
 
@@ -447,6 +449,16 @@ processStep step browser =
                 &> autoWait selector browser
                 &> Wd.click selector browser
 
+        MoveTo selector ->
+            validateSelector selector browser
+                &> autoWait selector browser
+                &> Wd.moveTo selector browser
+
+        MoveToWithOffset selector x y ->
+            validateSelector selector browser
+                &> autoWait selector browser
+                &> Wd.moveToWithOffset selector (Just x) (Just y) browser
+
         SetValue selector value ->
             inputAutoWait selector browser
                 &> validateSelector selector browser
@@ -575,6 +587,26 @@ visit url =
 click : String -> Step
 click selector =
     Click selector
+        |> ReturningUnit
+
+
+{-| Moves the mouse to the middle of the specified element
+-}
+moveTo : String -> Step
+moveTo selector =
+    MoveTo selector
+        |> ReturningUnit
+
+
+{-| Moves the mouse to the middle of the specified element. This function
+takes two integers (offsetX and offsetY).
+
+If offsetX has a value, move relative to the top-left corner of the element on the X axis
+If offsetY has a value, move relative to the top-left corner of the element on the Y axis
+-}
+moveToWithOffset : String -> Int -> Int -> Step
+moveToWithOffset selector xOffset yOffset =
+    MoveToWithOffset selector xOffset yOffset
         |> ReturningUnit
 
 

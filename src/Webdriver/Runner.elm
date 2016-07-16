@@ -147,25 +147,36 @@ update msg model =
 dispatchTests : Model -> ( Model, Cmd Msg )
 dispatchTests model =
     let
-        dispatchHelper ( i, ( name, steps ) ) ( model', msgs ) =
-            let
-                key =
-                    (toString i) ++ " - " ++ name
-
-                ( wModel, wMsg ) =
-                    W.update (open model.options) (init steps)
-            in
-                ( { model' | sessions = Dict.insert key wModel model'.sessions }
-                , (Cmd.map (DriverMsg key) wMsg) :: msgs
-                )
-
         nextState =
             model.runs
                 |> flattenRuns []
                 |> List.indexedMap (,)
-                |> List.foldr (dispatchHelper) ( model, [] )
+                |> List.foldr (dispatchHelper model.options) ( model, [] )
     in
         ( fst nextState, Cmd.batch (snd nextState) )
+
+
+{-| Compacts a list of named steps into an already provided Model and list of commands.
+This is used to build a single model and a single list of commands to dispatch out of
+a list of steps to run.
+-}
+dispatchHelper : W.Options -> (Int, (String, SingleRun)) -> (Model, List (Cmd Msg)) -> (Model, List (Cmd Msg))
+dispatchHelper options ( i, ( name, steps ) ) ( model, msgs ) =
+    let
+        key =
+            (toString i) ++ " - " ++ name
+
+        ( wModel, wMsg ) =
+            W.update (open options) (init steps)
+
+        newSessions =
+            Dict.insert key wModel model.sessions
+
+        dispatchCommand =
+            (Cmd.map (DriverMsg key) wMsg)
+
+    in
+        ( { model | sessions = newSessions } , dispatchCommand :: msgs )
 
 
 flattenRuns : List ( String, SingleRun ) -> Run -> List ( String, SingleRun )
@@ -192,16 +203,19 @@ delegateMessage runName action subModel thisModel =
 
                 summary =
                     thisModel.summary
+
+                updatedSummary =
+                            { summary
+                                | passed = summary.passed + newSummary.passed
+                                , failed = summary.failed + newSummary.failed
+                            }
+
             in
                 update
                     (EmitLog runName newSummary)
                     { thisModel
                         | sessions = Dict.remove runName thisModel.sessions
-                        , summary =
-                            { summary
-                                | passed = summary.passed + newSummary.passed
-                                , failed = summary.failed + newSummary.failed
-                            }
+                        , summary = updatedSummary
                     }
 
         _ ->
