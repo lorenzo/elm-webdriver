@@ -44,6 +44,7 @@ type alias Model =
     { options : W.Options
     , runs : Run
     , sessions : Dict String W.Model
+    , initTimes : Dict String Time
     , startTimes : Dict String Time
     , summary : Summary
     }
@@ -91,6 +92,7 @@ group name list =
 type Msg
     = Begin
     | StartRun String (Cmd W.Msg) Time
+    | StartedRun String Time
     | StopRun String Summary Time
     | DriverMsg String W.Msg
 
@@ -105,6 +107,7 @@ initModel options runs =
     , options = options
     , sessions = Dict.empty
     , summary = { output = "", passed = 0, failed = 0 }
+    , initTimes = Dict.empty
     , startTimes = Dict.empty
     }
 
@@ -129,12 +132,19 @@ update msg model =
         Begin ->
             dispatchTests model
 
-        StartRun i cmd startTime ->
+        StartRun i cmd initTime ->
+            let
+                newInitTimes =
+                    Dict.insert i initTime model.initTimes
+            in
+                ( { model | initTimes = newInitTimes }, Cmd.map (DriverMsg i) cmd )
+
+        StartedRun i startTime ->
             let
                 newStartTimes =
                     Dict.insert i startTime model.startTimes
             in
-                ( { model | startTimes = newStartTimes }, Cmd.map (DriverMsg i) cmd )
+                ( { model | startTimes = newStartTimes }, Cmd.none )
 
         DriverMsg i action ->
             case Dict.get i model.sessions of
@@ -146,16 +156,31 @@ update msg model =
 
         StopRun runName summary stopTime ->
             let
-                startTime =
-                    model.startTimes
+                getTime property =
+                    (property model)
                         |> Dict.get runName
                         |> Maybe.withDefault stopTime
+
+                startTime =
+                    getTime .startTimes
+
+                initTime =
+                    getTime .initTimes
+
+                waitTime =
+                    (startTime - initTime) / Time.second
 
                 ellapsed =
                     (stopTime - startTime) / Time.second
 
+                took =
+                    "Took " ++ (toString ellapsed) ++ "s. "
+
+                wait =
+                    "Waited " ++ (toString waitTime) ++ "s for dispatch"
+
                 outputWithTime =
-                    { summary | output = summary.output ++ "Took " ++ (toString ellapsed) ++ "s." }
+                    { summary | output = summary.output ++ took ++ wait }
 
                 firstTime default =
                     getFirstRunTime model.startTimes default
@@ -251,13 +276,26 @@ delegateMessage runName action subModel thisModel =
 
         _ ->
             let
+                timeCommand =
+                    case action of
+                        W.Initiated _ ->
+                            Time.now
+                                |> Task.map (StartedRun runName)
+                                |> Task.perform never identity
+
+                        _ ->
+                            Cmd.none
+
                 ( session, next ) =
                     W.update action subModel
+
+                subCommand =
+                    Cmd.map (DriverMsg runName) next
 
                 newSessions =
                     Dict.insert runName session thisModel.sessions
             in
-                ( { thisModel | sessions = newSessions }, Cmd.map (DriverMsg runName) next )
+                ( { thisModel | sessions = newSessions }, Cmd.batch [ timeCommand, subCommand ] )
 
 
 collectLog : W.Model -> Summary

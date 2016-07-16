@@ -2,7 +2,7 @@
 
 if [[ $# -gt 0 ]];
 then
-	FILE="$1".elm
+	FILE="$1"
 	shift
 else
 	FILE="Main.elm"
