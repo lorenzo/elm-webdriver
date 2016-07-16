@@ -5,7 +5,6 @@ port module Webdriver.Runner
         , Msg
         , describe
         , group
-        , initModel
         , begin
         , update
         )
@@ -26,15 +25,17 @@ inside groups.
 
 ## Kicking it off
 
-@docs begin, initModel, update
+@docs begin, update
 
 -}
 
-import Webdriver as W exposing (..)
-import Webdriver.Assert exposing (..)
-import String
 import Dict exposing (Dict)
 import Expect
+import String
+import Time exposing (Time)
+import Task
+import Webdriver as W exposing (..)
+import Webdriver.Assert exposing (..)
 
 
 {-| The model used for concurrently running multiple lists of steps
@@ -43,6 +44,7 @@ type alias Model =
     { options : W.Options
     , runs : Run
     , sessions : Dict String W.Model
+    , startTimes : Dict String Time
     , summary : Summary
     }
 
@@ -88,11 +90,12 @@ group name list =
 -}
 type Msg
     = Begin
-    | EmitLog String Summary
+    | StartRun String (Cmd W.Msg) Time
+    | StopRun String Summary Time
     | DriverMsg String W.Msg
 
 
-{-| Creates a new empty Model. This function is rarely used directly
+{-| Creates a new empty Model.
 
     initModel browserOptions (describe "All Tests" [...])
 -}
@@ -102,6 +105,7 @@ initModel options runs =
     , options = options
     , sessions = Dict.empty
     , summary = { output = "", passed = 0, failed = 0 }
+    , startTimes = Dict.empty
     }
 
 
@@ -125,6 +129,13 @@ update msg model =
         Begin ->
             dispatchTests model
 
+        StartRun i cmd startTime ->
+            let
+                newStartTimes =
+                    Dict.insert i startTime model.startTimes
+            in
+                ( { model | startTimes = newStartTimes }, Cmd.map (DriverMsg i) cmd )
+
         DriverMsg i action ->
             case Dict.get i model.sessions of
                 Just subModel ->
@@ -133,15 +144,29 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-        EmitLog runName output ->
+        StopRun runName summary stopTime ->
             let
+                startTime =
+                    model.startTimes
+                        |> Dict.get runName
+                        |> Maybe.withDefault stopTime
+
+                ellapsed =
+                    (stopTime - startTime) / Time.second
+
+                outputWithTime =
+                    { summary | output = summary.output ++ "Took " ++ (toString ellapsed) ++ "s." }
+
+                firstTime default =
+                    getFirstRunTime model.startTimes default
+
                 terminate =
                     if Dict.isEmpty model.sessions then
-                        exit <| prepareExitOutput model.summary
+                        exit <| exitOutput model.summary (firstTime stopTime) stopTime
                     else
                         Cmd.none
             in
-                ( model, Cmd.batch [ printLog ( runName, output ), terminate ] )
+                ( model, Cmd.batch [ printLog ( runName, outputWithTime ), terminate ] )
 
 
 dispatchTests : Model -> ( Model, Cmd Msg )
@@ -160,7 +185,7 @@ dispatchTests model =
 This is used to build a single model and a single list of commands to dispatch out of
 a list of steps to run.
 -}
-dispatchHelper : W.Options -> (Int, (String, SingleRun)) -> (Model, List (Cmd Msg)) -> (Model, List (Cmd Msg))
+dispatchHelper : W.Options -> ( Int, ( String, SingleRun ) ) -> ( Model, List (Cmd Msg) ) -> ( Model, List (Cmd Msg) )
 dispatchHelper options ( i, ( name, steps ) ) ( model, msgs ) =
     let
         key =
@@ -173,10 +198,11 @@ dispatchHelper options ( i, ( name, steps ) ) ( model, msgs ) =
             Dict.insert key wModel model.sessions
 
         dispatchCommand =
-            (Cmd.map (DriverMsg key) wMsg)
-
+            Time.now
+                |> Task.map (StartRun key wMsg)
+                |> Task.perform identity identity
     in
-        ( { model | sessions = newSessions } , dispatchCommand :: msgs )
+        ( { model | sessions = newSessions }, dispatchCommand :: msgs )
 
 
 flattenRuns : List ( String, SingleRun ) -> Run -> List ( String, SingleRun )
@@ -205,25 +231,33 @@ delegateMessage runName action subModel thisModel =
                     thisModel.summary
 
                 updatedSummary =
-                            { summary
-                                | passed = summary.passed + newSummary.passed
-                                , failed = summary.failed + newSummary.failed
-                            }
-
-            in
-                update
-                    (EmitLog runName newSummary)
-                    { thisModel
-                        | sessions = Dict.remove runName thisModel.sessions
-                        , summary = updatedSummary
+                    { summary
+                        | passed = summary.passed + newSummary.passed
+                        , failed = summary.failed + newSummary.failed
                     }
+
+                remainingSessions =
+                    Dict.remove runName thisModel.sessions
+
+                newModel =
+                    { thisModel | sessions = remainingSessions, summary = updatedSummary }
+
+                command =
+                    Time.now
+                        |> Task.map (StopRun runName newSummary)
+                        |> Task.perform identity identity
+            in
+                ( newModel, command )
 
         _ ->
             let
                 ( session, next ) =
                     W.update action subModel
+
+                newSessions =
+                    Dict.insert runName session thisModel.sessions
             in
-                ( { thisModel | sessions = Dict.insert runName session thisModel.sessions }, Cmd.map (DriverMsg runName) next )
+                ( { thisModel | sessions = newSessions }, Cmd.map (DriverMsg runName) next )
 
 
 collectLog : W.Model -> Summary
@@ -281,16 +315,36 @@ indentLines str =
         |> String.join "\n"
 
 
-prepareExitOutput : Summary -> Summary
-prepareExitOutput summary =
+getFirstRunTime : Dict String Time -> Time -> Time
+getFirstRunTime startTimes default =
+    startTimes
+        |> Dict.toList
+        |> List.map snd
+        |> List.minimum
+        |> Maybe.withDefault default
+
+
+exitOutput : Summary -> Time -> Time -> Summary
+exitOutput summary startTime endTime =
     let
         statusWord =
             if summary.failed > 0 then
                 "Failed: " ++ (toString summary.failed) ++ " assertions failed, "
             else
                 "OK. "
+
+        ellapsed =
+            (endTime - startTime) / Time.second
+
+        epilog =
+            (toString summary.passed) ++ " assertions passed. Took " ++ (toString ellapsed) ++ "s in total."
     in
-        { summary | output = "\n\n" ++ statusWord ++ (toString summary.passed) ++ " assertions passed." }
+        { summary | output = "\n\n" ++ statusWord ++ epilog }
+
+
+never : Never -> a
+never a =
+    never a
 
 
 
