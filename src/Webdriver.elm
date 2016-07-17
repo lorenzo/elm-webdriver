@@ -4,6 +4,7 @@ module Webdriver
         , Step
         , StepResult(..)
         , Msg(..)
+        , OutMsg(..)
         , Options
         , basicOptions
         , init
@@ -46,7 +47,10 @@ module Webdriver
 
 {-| A library to interface with Webdriver.io and produce commands
 
-@docs basicOptions, init, update, Options, Model, Msg, Step, StepResult
+@docs basicOptions, init, update, Options, Model, Msg, OutMsg, Step, StepResult
+
+## Basic Control
+
 @docs open, visit, click, moveTo, moveToWithOffset, close, end, switchToFrame
 
 ## Forms
@@ -105,6 +109,15 @@ type Msg
     | Finish
 
 
+{-| A message any parent module can read to track progress
+-}
+type OutMsg
+    = Spawned
+    | Progress Int
+    | Finalized
+    | None
+
+
 {-| The valid actions that can be executed in the browser
 -}
 type alias Step =
@@ -147,40 +160,72 @@ init actions =
 {-| Initializes the browser session and executes the steps as provided
 in the model.
 -}
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Cmd Msg, OutMsg )
 update msg model =
     case ( model, msg ) of
         ( _, Start options ) ->
-            ( model, startSession options )
+            ( model, startSession options, None )
 
         ( ( _, exs, actions ), Initiated browser ) ->
-            update (Process Nothing) ( Just browser, exs, actions )
+            let
+                newModel =
+                    ( Just browser, exs, actions )
+
+                command =
+                    Task.succeed (Process Nothing)
+                        |> Task.perform identity identity
+            in
+                ( newModel, command, Spawned )
 
         ( ( Just browser, exs, (ReturningUnit End) :: rest ), Process previousExpect ) ->
-            ( ( Nothing, previousExpect :: exs, [] ), finishSession browser )
+            ( ( Nothing, previousExpect :: exs, [] ), finishSession browser, Progress 0 )
 
         -- Automatically ending the session on last step
         ( ( Just browser, exs, [] ), Process previousExpect ) ->
-            ( ( Nothing, previousExpect :: exs, [] ), finishSession browser )
+            ( ( Nothing, previousExpect :: exs, [] ), finishSession browser, Progress 0 )
 
         ( ( Just browser, exs, action :: rest ), Process previousExpect ) ->
-            ( ( Just browser, previousExpect :: exs, rest ), process action browser )
+            let
+                outMsg =
+                    Progress (List.length rest)
+
+                newModel =
+                    ( Just browser, previousExpect :: exs, rest )
+            in
+                ( newModel, process action browser, outMsg )
 
         ( ( Just browser, exs, actions ), OnError actionDesc error ) ->
             let
                 message =
                     fail (errorMessage error)
                         |> StepResult actionDesc
+
+                newMessage =
+                    Just message
+                        |> Process
             in
                 -- Stop processing actions. The browser state is not reliable
-                update (Process <| Just message) ( Just browser, exs, [] )
+                update newMessage ( Just browser, exs, [] )
 
         -- We need to process the branch actions and the continue with the rest of the process
         ( ( Just browser, exs, actions ), ProcessBranch (action :: rest) ) ->
-            ( ( Just browser, exs, List.append rest actions ), process action browser )
+            let
+                newSteps =
+                    List.append rest actions
+
+                outMsg =
+                    Progress (List.length newSteps)
+
+                newModel =
+                    ( Just browser, exs, newSteps )
+            in
+                ( newModel, process action browser, outMsg )
+
+        ( ( _, exs, actions ), Finish ) ->
+            ( ( Nothing, exs, [] ), Cmd.none, Finalized )
 
         ( _, _ ) ->
-            ( model, Cmd.none )
+            ( model, Cmd.none, None )
 
 
 errorMessage : Wd.Error -> String

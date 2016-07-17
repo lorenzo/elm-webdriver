@@ -46,7 +46,15 @@ type alias Model =
     , sessions : Dict String W.Model
     , initTimes : Dict String Time
     , startTimes : Dict String Time
+    , statuses : Dict String RunStatus
     , summary : Summary
+    }
+
+
+type alias RunStatus =
+    { failed : Bool
+    , total : Int
+    , remaining : Int
     }
 
 
@@ -109,6 +117,15 @@ initModel options runs =
     , summary = { output = "", passed = 0, failed = 0 }
     , initTimes = Dict.empty
     , startTimes = Dict.empty
+    , statuses = Dict.empty
+    }
+
+
+initStatus : Int -> RunStatus
+initStatus total =
+    { failed = False
+    , total = total
+    , remaining = total
     }
 
 
@@ -202,8 +219,15 @@ dispatchTests model =
                 |> flattenRuns []
                 |> List.indexedMap (,)
                 |> List.foldr (dispatchHelper model.options) ( model, [] )
+
+        newModel =
+            fst nextState
+
+        statuses =
+            newModel.statuses
+                |> Dict.toList
     in
-        ( fst nextState, Cmd.batch (snd nextState) )
+        ( newModel, Cmd.batch <| (emitStatus statuses) :: (snd nextState) )
 
 
 {-| Compacts a list of named steps into an already provided Model and list of commands.
@@ -216,18 +240,24 @@ dispatchHelper options ( i, ( name, steps ) ) ( model, msgs ) =
         key =
             (toString i) ++ " - " ++ name
 
-        ( wModel, wMsg ) =
+        ( wModel, wMsg, _ ) =
             W.update (open options) (init steps)
 
         newSessions =
             Dict.insert key wModel model.sessions
 
+        status =
+            initStatus (List.length steps)
+
+        newStatuses =
+            Dict.insert key status model.statuses
+
         dispatchCommand =
             Time.now
                 |> Task.map (StartRun key wMsg)
-                |> Task.perform identity identity
+                |> Task.perform never identity
     in
-        ( { model | sessions = newSessions }, dispatchCommand :: msgs )
+        ( { model | sessions = newSessions, statuses = newStatuses }, dispatchCommand :: msgs )
 
 
 flattenRuns : List ( String, SingleRun ) -> Run -> List ( String, SingleRun )
@@ -246,56 +276,82 @@ flattenRuns result suite =
 
 delegateMessage : String -> W.Msg -> W.Model -> Model -> ( Model, Cmd Msg )
 delegateMessage runName action subModel thisModel =
-    case action of
-        W.Finish ->
-            let
-                newSummary =
-                    collectLog subModel
+    let
+        ( session, next, progressMessage ) =
+            W.update action subModel
 
-                summary =
-                    thisModel.summary
+        subCommand =
+            Cmd.map (DriverMsg runName) next
 
-                updatedSummary =
-                    { summary
-                        | passed = summary.passed + newSummary.passed
-                        , failed = summary.failed + newSummary.failed
-                    }
+        newSessions =
+            Dict.insert runName session thisModel.sessions
 
-                remainingSessions =
-                    Dict.remove runName thisModel.sessions
+        updatedModel =
+            { thisModel | sessions = newSessions }
 
-                newModel =
-                    { thisModel | sessions = remainingSessions, summary = updatedSummary }
+        ( newModel, reportCommands ) =
+            case progressMessage of
+                Spawned ->
+                    ( updatedModel
+                    , Time.now
+                        |> Task.map (StartedRun runName)
+                        |> Task.perform never identity
+                    )
 
-                command =
-                    Time.now
-                        |> Task.map (StopRun runName newSummary)
-                        |> Task.perform identity identity
-            in
-                ( newModel, command )
+                Progress remaining ->
+                    updateStatus runName updatedModel remaining
 
-        _ ->
-            let
-                timeCommand =
-                    case action of
-                        W.Initiated _ ->
-                            Time.now
-                                |> Task.map (StartedRun runName)
-                                |> Task.perform never identity
+                None ->
+                    ( updatedModel, Cmd.none )
 
-                        _ ->
-                            Cmd.none
+                Finalized ->
+                    endSummary runName updatedModel subModel
+    in
+        ( newModel, Cmd.batch [ reportCommands, subCommand ] )
 
-                ( session, next ) =
-                    W.update action subModel
 
-                subCommand =
-                    Cmd.map (DriverMsg runName) next
+updateStatus : String -> Model -> Int -> ( Model, Cmd Msg )
+updateStatus runName thisModel remaining =
+    let
+        updater status =
+            { status | remaining = remaining }
 
-                newSessions =
-                    Dict.insert runName session thisModel.sessions
-            in
-                ( { thisModel | sessions = newSessions }, Cmd.batch [ timeCommand, subCommand ] )
+        newStatuses =
+            Dict.update runName (Maybe.map updater) thisModel.statuses
+
+        newModel =
+            { thisModel | statuses = newStatuses }
+    in
+        ( newModel, emitStatusUpdate (Dict.toList newStatuses) )
+
+
+endSummary : String -> Model -> W.Model -> ( Model, Cmd Msg )
+endSummary runName thisModel subModel =
+    let
+        newSummary =
+            collectLog subModel
+
+        summary =
+            thisModel.summary
+
+        updatedSummary =
+            { summary
+                | passed = summary.passed + newSummary.passed
+                , failed = summary.failed + newSummary.failed
+            }
+
+        remainingSessions =
+            Dict.remove runName thisModel.sessions
+
+        newModel =
+            { thisModel | sessions = remainingSessions, summary = updatedSummary }
+
+        command =
+            Time.now
+                |> Task.map (StopRun runName newSummary)
+                |> Task.perform never identity
+    in
+        ( newModel, command )
 
 
 collectLog : W.Model -> Summary
@@ -387,6 +443,12 @@ never a =
 
 
 -- PORTS
+
+
+port emitStatus : List ( String, RunStatus ) -> Cmd msg
+
+
+port emitStatusUpdate : List ( String, RunStatus ) -> Cmd msg
 
 
 port printLog : ( String, Summary ) -> Cmd msg
