@@ -18,6 +18,7 @@ if (typeof elm.Main === 'undefined' ) {
 
 var main = elm.Main.worker();
 var statusBars = {};
+var summaries = {};
 
 main.ports.emitStatus.subscribe(function (statuses) {
   statuses.forEach(function (status) {
@@ -43,21 +44,15 @@ main.ports.emitStatusUpdate.subscribe(function (statuses) {
 });
 
 main.ports.printLog.subscribe(function (summary) {
-  var name = summary[0];
-  var summary = summary[1];
-  var fn = summary.failed > 0 ? cl.red : cl.green;
-
-
-  fn();
-  console.log(name);
-  fn();
-
-  console.log(summary.output);
+  summaries[summary[0]] = summary;
 });
 
 main.ports.exit.subscribe(function (summary) {
-  var bg = summary.failed == 0 ? chalk.bgGreen : chalk.bgRed;
+  for (name in statusBars) {
+    printSummary(summaries[name]);
+  }
 
+  var bg = summary.failed == 0 ? chalk.bgGreen : chalk.bgRed;
   console.log(bg(chalk.white(summary.output)))
 
   if (summary.failed > 0) {
@@ -66,3 +61,17 @@ main.ports.exit.subscribe(function (summary) {
 
   process.exit(0);
 });
+
+function printSummary(summary) {
+  var name = summary[0];
+  var summary = summary[1];
+  var fn = summary.failed > 0 ? cl.red : cl.green;
+
+
+  console.log("\n\n");
+  fn();
+  console.log(name);
+  fn();
+
+  console.log(summary.output);
+}
