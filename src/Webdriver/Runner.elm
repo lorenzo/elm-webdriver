@@ -319,8 +319,8 @@ updateStatus runName thisModel remaining result =
                 Just (StepResult desc res) ->
                     res
                         |> Expect.getFailure
-                        |> Maybe.map (always False)
-                        |> Maybe.withDefault True
+                        |> Maybe.map (always True)
+                        |> Maybe.withDefault False
 
                 _ ->
                     False
