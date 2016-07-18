@@ -4,7 +4,7 @@ import Html
 import Html.App as App
 import Webdriver as W exposing (..)
 import Webdriver.Assert exposing (..)
-import Webdriver.Runner as R exposing (..)
+import Webdriver.Runner as R exposing (Run, update, begin, group, describe)
 import Expect
 
 
@@ -18,6 +18,7 @@ main =
         }
 
 
+firstLink' : String
 firstLink' =
     "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a"
 

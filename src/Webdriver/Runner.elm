@@ -36,6 +36,7 @@ import Time exposing (Time)
 import Task
 import Webdriver as W exposing (..)
 import Webdriver.Assert exposing (..)
+import Webdriver.Process as P exposing (Model, OutMsg(..), StepResult(..))
 
 
 {-| The model used for concurrently running multiple lists of steps
@@ -43,7 +44,7 @@ import Webdriver.Assert exposing (..)
 type alias Model =
     { options : W.Options
     , runs : Run
-    , sessions : Dict String W.Model
+    , sessions : Dict String P.Model
     , initTimes : Dict String Time
     , startTimes : Dict String Time
     , statuses : Dict String RunStatus
@@ -99,10 +100,10 @@ group name list =
 -}
 type Msg
     = Begin
-    | StartRun String (Cmd W.Msg) Time
+    | StartRun String (Cmd P.Msg) Time
     | StartedRun String Time
     | StopRun String Summary Time
-    | DriverMsg String W.Msg
+    | DriverMsg String P.Msg
 
 
 {-| Creates a new empty Model.
@@ -241,7 +242,7 @@ dispatchHelper options ( i, ( name, steps ) ) ( model, msgs ) =
             (toString i) ++ " - " ++ name
 
         ( wModel, wMsg, _ ) =
-            W.update (open options) (init steps)
+            P.update (P.open options) (P.init steps)
 
         newSessions =
             Dict.insert key wModel model.sessions
@@ -274,11 +275,11 @@ flattenRuns result suite =
             ( name, steps ) :: result
 
 
-delegateMessage : String -> W.Msg -> W.Model -> Model -> ( Model, Cmd Msg )
+delegateMessage : String -> P.Msg -> P.Model -> Model -> ( Model, Cmd Msg )
 delegateMessage runName action subModel thisModel =
     let
         ( session, next, progressMessage ) =
-            W.update action subModel
+            P.update action subModel
 
         subCommand =
             Cmd.map (DriverMsg runName) next
@@ -336,7 +337,7 @@ updateStatus runName thisModel remaining result =
         ( newModel, emitStatusUpdate (Dict.toList newStatuses) )
 
 
-endSummary : String -> Model -> W.Model -> ( Model, Cmd Msg )
+endSummary : String -> Model -> P.Model -> ( Model, Cmd Msg )
 endSummary runName thisModel subModel =
     let
         newSummary =
@@ -365,7 +366,7 @@ endSummary runName thisModel subModel =
         ( newModel, command )
 
 
-collectLog : W.Model -> Summary
+collectLog : P.Model -> Summary
 collectLog ( _, expectations, _ ) =
     expectations
         |> List.filterMap identity
