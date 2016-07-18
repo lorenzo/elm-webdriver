@@ -298,8 +298,8 @@ delegateMessage runName action subModel thisModel =
                         |> Task.perform never identity
                     )
 
-                Progress remaining ->
-                    updateStatus runName updatedModel remaining
+                Progress remaining result ->
+                    updateStatus runName updatedModel remaining result
 
                 None ->
                     ( updatedModel, Cmd.none )
@@ -310,11 +310,22 @@ delegateMessage runName action subModel thisModel =
         ( newModel, Cmd.batch [ reportCommands, subCommand ] )
 
 
-updateStatus : String -> Model -> Int -> ( Model, Cmd Msg )
-updateStatus runName thisModel remaining =
+updateStatus : String -> Model -> Int -> Maybe StepResult -> ( Model, Cmd Msg )
+updateStatus runName thisModel remaining result =
     let
+        failed =
+            case result of
+                Just (StepResult desc res) ->
+                    res
+                        |> Expect.getFailure
+                        |> Maybe.map (always False)
+                        |> Maybe.withDefault True
+
+                _ ->
+                    False
+
         updater status =
-            { status | remaining = remaining }
+            { status | remaining = remaining, failed = status.failed || failed }
 
         newStatuses =
             Dict.update runName (Maybe.map updater) thisModel.statuses

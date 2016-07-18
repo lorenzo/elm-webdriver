@@ -113,7 +113,7 @@ type Msg
 -}
 type OutMsg
     = Spawned
-    | Progress Int
+    | Progress Int (Maybe StepResult)
     | Finalized
     | None
 

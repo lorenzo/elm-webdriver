@@ -18,6 +18,10 @@ main =
         }
 
 
+firstLink' =
+    "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a"
+
+
 searchElm : Run
 searchElm =
     describe "Finding Elm Lang in Google"
@@ -25,8 +29,8 @@ searchElm =
         , title <| Expect.equal "this will fail!"
         , elementCount "input[name='q']" <| Expect.atLeast 1
         , setValue "input[name='q']" "Elm lang"
-        , elementText "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a" <| Expect.equal "Elm is the best"
-        , click "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a"
+        , elementText firstLink' <| Expect.equal "Elm is the best"
+        , click firstLink'
         , pause 1000
         , title <| Expect.equal "home"
         ]
@@ -39,8 +43,8 @@ searchHackerNews =
         , title <| Expect.equal "Google"
         , elementCount "input[name='q']" <| Expect.atLeast 1
         , setValue "input[name='q']" "Hacker News"
-        , elementText "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a" <| Expect.equal "Hacker News"
-        , click "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a"
-        , pause 2000
+        , elementText firstLink' <| Expect.equal "Hacker News"
+        , click firstLink'
+        , pause 1000
         , title <| Expect.equal "home"
         ]

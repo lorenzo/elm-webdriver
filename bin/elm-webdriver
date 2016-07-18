@@ -12,7 +12,7 @@ MY_PATH=`dirname "$0"`
 TARGET=__main.js
 TARGET=`realpath $TARGET`
 
-elm-make "$FILE" --output "$TARGET" && /usr/bin/env node $MY_PATH/runner.js "$TARGET" $*
+elm-make "$FILE" --output "$TARGET" > /dev/null && /usr/bin/env node $MY_PATH/runner.js "$TARGET" $*
 
 EXIT=$?
 

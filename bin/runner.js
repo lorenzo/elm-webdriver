@@ -19,11 +19,12 @@ if (typeof elm.Main === 'undefined' ) {
 var main = elm.Main.worker();
 var statusBars = {};
 var summaries = {};
+var defaultSchema = "\n:name.magenta\n :bar.green :current/:total (:percent)";
 
 main.ports.emitStatus.subscribe(function (statuses) {
   statuses.forEach(function (status) {
     statusBars[status[0]] = new ProgressBar({
-      schema: "\n:name.magenta\n :bar.green :current/:total (:percent)",
+      schema: defaultSchema,
       total : status[1].total
     });
 
@@ -39,7 +40,14 @@ main.ports.emitStatusUpdate.subscribe(function (statuses) {
     .forEach(function (status) {
       var bar = statusBars[status[0]];
       var ticks =  (status[1].total - status[1].remaining) - bar.current;
-      bar.tick(ticks, {name: status[0]});
+
+      if (status[1].failed) {
+        bar.setSchema(defaultSchema.replace(':bar.green', ':bar.red'));
+      }
+
+      bar.tick(ticks, {
+        name: status[0]
+      });
     });
 });
 
