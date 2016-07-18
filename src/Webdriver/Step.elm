@@ -30,6 +30,7 @@ module Webdriver.Step
         )
 
 import Expect
+import Task exposing (Task)
 
 
 type alias Selector =
@@ -54,6 +55,7 @@ type Step
     | AssertionBool String BoolStep (Bool -> Expectation)
     | AssertionGeometry String GeometryStep (( Int, Int ) -> Expectation)
     | AssertionInt String IntStep (Int -> Expectation)
+    | AssertionTask String (Task Never String) (String -> Expectation)
 
 
 type UnitStep

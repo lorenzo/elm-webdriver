@@ -260,6 +260,11 @@ process action browser =
                     processIntStep step browser
                         |> convertAssertion desc assert
 
+                AssertionTask desc task assert ->
+                    task
+                        |> Task.map (assert >> StepResult desc >> Just)
+                        |> perform (always <| Process Nothing) Process
+
                 ReturningUnit step ->
                     processStep step browser
                         |> perform (OnError (toString step)) (always <| Process Nothing)

@@ -20,11 +20,13 @@ state of the browser.
 @docs attribute, css, elementHTML, elementText, inputValue, exists
 @docs inputEnabled, visible, visibleWithinViewport, optionSelected
 @docs elementSize, elementPosition, elementViewPosition
+@docs task
 
 -}
 
 import Webdriver.Step exposing (..)
 import Expect
+import Task exposing (Task)
 
 
 {-| Alias for the test Expectation type
@@ -313,3 +315,12 @@ elementViewPosition selector fn =
         ("Check the position of the element < " ++ selector ++ " > relative to the viewport")
         (getElementViewPosition selector)
         fn
+
+
+{-| Asserts the result of performing a Task
+
+    task "Custom command" (Task.succeed "My value") <| Expect.equal "My Value"
+-}
+task : String -> Task Never String -> (String -> Expectation) -> Step
+task name theTask fn =
+    AssertionTask name theTask fn
