@@ -31,6 +31,7 @@ module Webdriver.Step
 
 import Expect
 import Task exposing (Task)
+import Webdriver.LowLevel as Wd
 
 
 type alias Selector =
@@ -50,12 +51,15 @@ type Step
     | BranchBool BoolStep (Bool -> List Step)
     | BranchGeometry GeometryStep (( Int, Int ) -> List Step)
     | BranchInt IntStep (Int -> List Step)
+    | BranchTask (Task Never (List Step))
+    | BranchWebdriver (Wd.Browser -> Task Wd.Error (List Step))
     | AssertionMaybe String MaybeStep (Maybe String -> Expectation)
     | AssertionString String StringStep (String -> Expectation)
     | AssertionBool String BoolStep (Bool -> Expectation)
     | AssertionGeometry String GeometryStep (( Int, Int ) -> Expectation)
     | AssertionInt String IntStep (Int -> Expectation)
-    | AssertionTask String (Task Never String) (String -> Expectation)
+    | AssertionTask String (Task Never Expectation)
+    | AssertionWebdriver String (Wd.Browser -> Task Wd.Error Expectation)
 
 
 type UnitStep

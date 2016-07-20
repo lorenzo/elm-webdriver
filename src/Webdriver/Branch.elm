@@ -16,10 +16,13 @@ state of the browser.
 @docs ifAttribute, ifCss, ifElementHTML, ifText, ifValue, ifExists
 @docs ifEnabled, ifVisible, ifVisibleWithinViewport, ifOptionIsSelected
 @docs ifElementSize, ifElementPosition, ifElementViewPosition
+@docs ifTask, ifDriverCommand
 
 -}
 
 import Webdriver.Step exposing (..)
+import Webdriver.LowLevel as Wd
+import Task exposing (Task)
 
 
 {-| Executes the list of steps the passed function returns depending
@@ -190,3 +193,24 @@ on the number of elements returned by the selector
 ifElementCount : String -> (Int -> List Step) -> Step
 ifElementCount selector f =
     BranchInt (countElements selector) f
+
+
+{-| Executes the list of steps returned as the result of performing a Task
+-}
+ifTask : Task Never (List Step) -> Step
+ifTask theTask =
+    BranchTask theTask
+
+
+{-| Executes the list of steps resulting of executing a LowLevel Webdriver task. This allows you to create
+custom sequences of tasks to be executed directly in the webdriver, maybe after getting
+values from other tasks.
+-}
+ifDriverCommand : (Wd.Browser -> Task Wd.Error a) -> (a -> List Step) -> Step
+ifDriverCommand partiallyAppliedTask f =
+    let
+        task browser =
+            partiallyAppliedTask browser
+                |> Task.map f
+    in
+        BranchWebdriver task

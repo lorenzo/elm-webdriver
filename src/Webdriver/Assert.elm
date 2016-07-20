@@ -20,11 +20,12 @@ state of the browser.
 @docs attribute, css, elementHTML, elementText, inputValue, exists
 @docs inputEnabled, visible, visibleWithinViewport, optionSelected
 @docs elementSize, elementPosition, elementViewPosition
-@docs task
+@docs task, driverCommand, sequenceCommands
 
 -}
 
 import Webdriver.Step exposing (..)
+import Webdriver.LowLevel as Wd
 import Expect
 import Task exposing (Task)
 
@@ -319,8 +320,46 @@ elementViewPosition selector fn =
 
 {-| Asserts the result of performing a Task
 
-    task "Custom command" (Task.succeed "My value") <| Expect.equal "My Value"
+    task "Check custom assertion" (Task.succeed "My value" `Expect.equal` "My Value")
 -}
-task : String -> Task Never String -> (String -> Expectation) -> Step
-task name theTask fn =
-    AssertionTask name theTask fn
+task : String -> Task Never Expectation -> Step
+task name theTask =
+    AssertionTask name theTask
+
+
+{-| Asserts the result of executing a LowLevel Webdriver task. This allows you to create
+custom sequences of tasks to be executed directly in the webdriver, maybe after getting
+values from other tasks.
+
+    driverCommand "Custom cookie check"
+        (Wd.getCookie "user")
+        (Maybe.map (Expect.equal "2") >> Maybe.withDefault (Expect.fail "Cookie is missing")
+-}
+driverCommand : String -> (Wd.Browser -> Task Wd.Error a) -> (a -> Expectation) -> Step
+driverCommand name partiallyAppliedTask assert =
+    let
+        task browser =
+            partiallyAppliedTask browser
+                |> Task.map assert
+    in
+        AssertionWebdriver name task
+
+
+{-| Asserts the result of executing a list of LowLevel Webdriver task. This allows you to create
+custom sequences of tasks to be executed directly in the webdriver, maybe after getting
+values from other tasks.
+
+    driverCommand "Custom cookie check"
+        [Wd.getCookie "user", Wd.getCookie "legacy_user"]
+        (Maybe.oneOf >> Maybe.map (Expec.equal "2) >> Maybe.withDefault (Expect.fail "Cookie is missing"))
+-}
+sequenceCommands : String -> List (Wd.Browser -> Task Wd.Error a) -> (List a -> Expectation) -> Step
+sequenceCommands name partiallyAppliedTasks assert =
+    let
+        task browser =
+            partiallyAppliedTasks
+                |> List.map (\t -> t browser)
+                |> Task.sequence
+                |> Task.map assert
+    in
+        AssertionWebdriver name task

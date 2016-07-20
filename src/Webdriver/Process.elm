@@ -174,6 +174,9 @@ errorMessage error =
         Wd.UnknownError { message } ->
             "Oops, something wrong happened.\n\n" ++ message
 
+        Wd.InvalidCommand { message } ->
+            message
+
 
 startSession : Options -> Cmd Msg
 startSession options =
@@ -260,10 +263,15 @@ process action browser =
                     processIntStep step browser
                         |> convertAssertion desc assert
 
-                AssertionTask desc task assert ->
+                AssertionTask desc task ->
                     task
-                        |> Task.map (assert >> StepResult desc >> Just)
+                        |> Task.map (StepResult desc >> Just)
                         |> perform (always <| Process Nothing) Process
+
+                AssertionWebdriver desc task ->
+                    task browser
+                        |> Task.map (StepResult desc >> Just)
+                        |> perform (OnError desc) Process
 
                 ReturningUnit step ->
                     processStep step browser
@@ -288,6 +296,15 @@ process action browser =
                 BranchInt step decider ->
                     processIntStep step browser
                         |> performBranch decider
+
+                BranchTask task ->
+                    task
+                        |> Task.map (resolveBranch identity)
+                        |> Task.perform never identity
+
+                BranchWebdriver task ->
+                    task browser
+                        |> Task.perform (OnError "Resolving custom webdriver command branch") ProcessBranch
     in
         command
 
@@ -530,3 +547,8 @@ processStep step browser =
 
         Close ->
             Wd.close browser
+
+
+never : Never -> a
+never a =
+    never a

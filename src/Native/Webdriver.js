@@ -360,13 +360,23 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
       var promise = client.selectorExecute(selector, function (elements) {
         return elements.length;
       });
-      arity1ReturningExecute(c, promise , {selector: selector});
+      arity1ReturningExecute(c, promise, {selector: selector});
+    });
+  }
+
+  function customCommand(name, args, client) {
+    return nativeBinding(function (c) {
+      if (typeof client[name]  === "undefined") {
+        return handleError({type: "InvalidCommand", "message" : "Unknown custom command: < " + name + " >"}, c,  {});
+      }
+
+      arity1ReturningExecute(c, client[name].call(client, args), {});
     });
   }
 
   function handleError(error, callback, context) {
     var tag = {
-      ctor: 'UnknownError',
+      ctor: "UnknownError",
       _0: {
         errorType: error.type,
         message: error.message
@@ -375,17 +385,23 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
 
     switch (error.type) {
         case "NoSuchElement" :
-            tag.ctor = 'MissingElement';
+            tag.ctor = "MissingElement";
+            context.selector = context.selector || "";
             break;
 
         case "WaitUntilTimeoutError" :
-            tag.ctor = 'FailedElementPrecondition';
+            tag.ctor = "FailedElementPrecondition";
+            context.selector = context.selector || "";
             break;
         case "RuntimeError" :
             if (error.message.indexOf("Element is not clickable") === 0) {
-              tag.ctor = 'UnreachableElement';
+              tag.ctor = "UnreachableElement";
             }
+            context.selector = context.selector || "";
             tag._0.screenshot = error.screenshot;
+
+        case "InvalidCommand" :
+            tag.ctor = error.type;
     }
 
     tag._0 = Object.assign(tag._0, context);
@@ -440,6 +456,7 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     getElementSize: F2(getElementSize),
     getLocation: F2(getLocation),
     getLocationInView: F2(getLocationInView),
-    countElements: F2(countElements)
+    countElements: F2(countElements),
+    customCommand: F3(customCommand)
   };
 }();

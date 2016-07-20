@@ -61,6 +61,7 @@ module Webdriver.LowLevel
         , optionIsSelected
         , cookieExists
         , countElements
+        , customCommand
         )
 
 {-| Offers access to the webdriver.io js library
@@ -119,11 +120,15 @@ module Webdriver.LowLevel
 
 @docs getCookie, cookieExists
 
+## Custom
+
+@docs customCommand
 
 -}
 
 import Native.Webdriver
 import Task exposing (Task)
+import Json.Encode exposing (Value)
 
 
 {-| Represents a Browser Window
@@ -155,6 +160,7 @@ type Error
     | TooManyElements (ErrorDetails (WithSelector {}))
     | FailedElementPrecondition (ErrorDetails (WithSelector {}))
     | UnknownError (ErrorDetails (WithScreenshot {}))
+    | InvalidCommand (ErrorDetails {})
 
 
 type alias WithScreenshot a =
@@ -597,3 +603,13 @@ cookieExists name browser =
 countElements : String -> Browser -> Task Error Int
 countElements =
     Native.Webdriver.countElements
+
+
+{-| Allows you to execute an arbitrary command in the client by a name. The return value
+of the comand coms as a Json.Encode.Value.
+
+    customCommand "windowHandleSize" [JE.string "dc30381e-e2f3-9444-8bf3-12cc44e8372a"] browser
+-}
+customCommand : String -> List Value -> Browser -> Task Error Value
+customCommand =
+    Native.Webdriver.customCommand
