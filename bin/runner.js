@@ -42,7 +42,7 @@ main.ports.emitStatusUpdate.subscribe(function (statuses) {
       var ticks =  (status[1].total - status[1].remaining) - bar.current;
 
       if (status[1].failed) {
-        bar.setSchema(defaultSchema.replace(':bar.green', ':bar.red'));
+        bar.setSchema(defaultSchema.replace(':bar.green', ':bar.red'), {name: status[0]});
       }
 
       bar.tick(ticks, {
