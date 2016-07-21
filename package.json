@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "description": "Elm bridge for Webdriver.io and testing utilities",
   "main": "index.js",
+  "engines": {
+    "node": ">=4.0.0"
+  },
   "directories": {
     "example": "example"
   },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "bin": {
+    "elm-webdriver": "bin/elm-webdriver"
   },
   "repository": {
     "type": "git",
@@ -17,6 +20,7 @@
     "elm",
     "elmlang",
     "webdriver",
+    "cli",
     "test"
   ],
   "author": "José Lorenzo Rodríguez",
