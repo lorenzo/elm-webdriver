@@ -2,8 +2,13 @@
 
 if [[ $# -gt 0 ]];
 then
-	FILE="$1"
-	shift
+	if [[ $1 == "--"* ]]
+	then
+		FILE="Main.elm"
+	else
+		FILE="$1"
+		shift
+	fi
 else
 	FILE="Main.elm"
 fi
@@ -12,7 +17,11 @@ MY_PATH=`dirname "$0"`
 TARGET=__main.js
 TARGET=`realpath $TARGET`
 
-elm-make "$FILE" --output "$TARGET" > /dev/null && /usr/bin/env node $MY_PATH/runner.js "$TARGET" $*
+compile() {
+	elm-make "$FILE" --output "$1" > /dev/null
+}
+
+compile "$TARGET" && /usr/bin/env node $MY_PATH/runner.js "$TARGET" $*
 
 EXIT=$?
 

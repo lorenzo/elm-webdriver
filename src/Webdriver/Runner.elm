@@ -2,7 +2,8 @@ port module Webdriver.Runner
     exposing
         ( Model
         , Run
-        , Msg
+        , Msg(..)
+        , Flags
         , describe
         , group
         , begin
@@ -14,7 +15,7 @@ of each of the runs.
 
 ## Types
 
-@docs Model, Run, Msg
+@docs Model, Run, Msg, Flags
 
 ## Creating runs and groups of runs
 
@@ -75,6 +76,14 @@ type Run
     | Run String SingleRun
 
 
+{-| Custom options to be set to the runner, such as filtering tests
+by name.
+-}
+type alias Flags =
+    { filter : Maybe String
+    }
+
+
 {-| Describes with a name a list of steps to be executed
 
     describe "Login smoke test" [...]
@@ -99,7 +108,7 @@ group name list =
 {-| The Messages this module can process
 -}
 type Msg
-    = Begin
+    = Begin Flags
     | StartRun String (Cmd P.Msg) Time
     | StartedRun String Time
     | StopRun String Summary Time
@@ -134,11 +143,11 @@ initStatus total =
 a Run suite. This is usually the function you will call to feed your
 main program.
 
-    begin browserOptions (describe "All Tests" [...])
+    begin flags browserOptions (describe "All Tests" [...])
 -}
-begin : Options -> Run -> ( Model, Cmd Msg )
-begin options steps =
-    update Begin (initModel options steps)
+begin : Options -> Run -> Flags -> ( Model, Cmd Msg )
+begin options steps flags =
+    update (Begin flags) (initModel options steps)
 
 
 {-| Starts the browser sessions and executes all the steps. Finally, it displays a sumamry
@@ -147,8 +156,8 @@ of the run with the help of a port.
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Begin ->
-            dispatchTests model
+        Begin flags ->
+            dispatchTests flags.filter model
 
         StartRun i cmd initTime ->
             let
@@ -212,12 +221,18 @@ update msg model =
                 ( model, Cmd.batch [ printLog ( runName, outputWithTime ), terminate ] )
 
 
-dispatchTests : Model -> ( Model, Cmd Msg )
-dispatchTests model =
+dispatchTests : Maybe String -> Model -> ( Model, Cmd Msg )
+dispatchTests filterString model =
     let
+        filter =
+            filterString
+                |> Maybe.map String.contains
+                |> Maybe.withDefault (always True)
+
         nextState =
             model.runs
                 |> flattenRuns []
+                |> List.filter (fst >> filter)
                 |> List.indexedMap (,)
                 |> List.foldr (dispatchHelper model.options) ( model, [] )
 

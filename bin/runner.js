@@ -16,7 +16,18 @@ if (typeof elm.Main === 'undefined' ) {
   throw 'Main is not defined. Make sure your module is named Main.'
 }
 
-var main = elm.Main.worker();
+var filter = null;
+
+if (process.argv[3] == "--filter" || process.argv[3] == "-f") {
+  filter = process.argv[4]
+
+  if (!filter) {
+    console.error("The --filter option must not be empty.");
+    process.exit(1);
+  }
+}
+
+var main = elm.Main.worker({filter: filter});
 var statusBars = {};
 var summaries = {};
 var defaultSchema = "\n:name.magenta\n :bar.green :current/:total (:percent)";

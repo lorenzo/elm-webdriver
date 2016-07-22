@@ -8,9 +8,9 @@ import Webdriver.Runner as R exposing (Run, update, begin, group, describe)
 import Expect
 
 
-main : Program Never
+main : Program R.Flags
 main =
-    App.program
+    App.programWithFlags
         { init = begin basicOptions <| group "Find in Google" [ searchElm, searchHackerNews ]
         , update = R.update
         , view = \_ -> Html.text ""
