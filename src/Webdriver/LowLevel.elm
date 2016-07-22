@@ -20,6 +20,8 @@ module Webdriver.LowLevel
         , selectByValue
         , selectByText
         , submitForm
+        , setCookie
+        , deleteCookie
         , waitForExist
         , waitForNotExist
         , waitForVisible
@@ -118,7 +120,7 @@ module Webdriver.LowLevel
 
 ## Cokies
 
-@docs getCookie, cookieExists
+@docs getCookie, cookieExists, setCookie, deleteCookie
 
 ## Custom
 
@@ -280,6 +282,20 @@ selectByText =
 submitForm : String -> Browser -> Task Error ()
 submitForm =
     Native.Webdriver.submitForm
+
+
+{-| Sets the value of a cookie
+-}
+setCookie : String -> String -> Browser -> Task Error ()
+setCookie =
+    Native.Webdriver.setCookie
+
+
+{-| Sets the value of a cookie
+-}
+deleteCookie : String -> Browser -> Task Error ()
+deleteCookie =
+    Native.Webdriver.deleteCookie
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of

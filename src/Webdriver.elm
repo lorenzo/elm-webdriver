@@ -29,6 +29,8 @@ module Webdriver
         , waitForEnabled
         , waitForNotEnabled
         , waitForDebug
+        , setCookie
+        , deleteCookie
         , pause
         , scrollToElement
         , scrollToElementOffset
@@ -75,6 +77,10 @@ module Webdriver
 @docs scrollToElement
     , scrollToElementOffset
     , scrollWindow
+
+## Cookies
+
+@docs setCookie, deleteCookie
 
 ## Screenshots
 
@@ -219,6 +225,22 @@ selectByText selector text =
 submitForm : String -> Step
 submitForm selector =
     Submit selector
+        |> ReturningUnit
+
+
+{-| Set the value for a cookie
+-}
+setCookie : String -> String -> Step
+setCookie name value =
+    SetCookie name value
+        |> ReturningUnit
+
+
+{-| Deletes a cookie by name
+-}
+deleteCookie : String -> Step
+deleteCookie name =
+    DeleteCookie name
         |> ReturningUnit
 
 

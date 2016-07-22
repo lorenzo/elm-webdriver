@@ -73,6 +73,8 @@ type UnitStep
     | SelectByValue Selector String
     | SelectByIndex Selector Int
     | SelectByText Selector String
+    | SetCookie String String
+    | DeleteCookie String
     | Submit Selector
     | WaitForExist Selector Int
     | WaitForNotExist Selector Int

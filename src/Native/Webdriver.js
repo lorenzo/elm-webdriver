@@ -254,6 +254,18 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     });
   }
 
+  function setCookie(name, value, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.setCookie({name: name, value: value}), {});
+    });
+  }
+
+  function deleteCookie(name, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.deleteCookie(name), {});
+    });
+  }
+
   function getAttribute(selector, name, client) {
     return nativeBinding(function (c) {
       maybeReturningExecute(c, client.getAttribute(selector, name), {selector: selector});
@@ -422,6 +434,8 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
     selectByValue: F3(selectByValue),
     selectByText: F3(selectByText),
     submitForm: F2(submitForm),
+    setCookie: F3(setCookie),
+    deleteCookie: F2(deleteCookie),
     waitForExist: F4(waitForExist),
     waitForValue: F4(waitForValue),
     waitForSelected: F4(waitForSelected),

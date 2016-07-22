@@ -485,6 +485,12 @@ processStep step browser =
             validateSelector selector browser
                 &> Wd.submitForm selector browser
 
+        SetCookie name value ->
+            Wd.setCookie name value browser
+
+        DeleteCookie name ->
+            Wd.deleteCookie name browser
+
         WaitForExist selector timeout ->
             Wd.waitForExist selector timeout browser
 
