@@ -13,8 +13,8 @@ state of the browser.
 
 ## Element properties
 
-@docs ifAttribute, ifCss, ifElementHTML, ifText, ifValue, ifExists
-@docs ifEnabled, ifVisible, ifVisibleWithinViewport, ifOptionIsSelected
+@docs ifAttribute, ifCss, ifElementHTML, ifText, ifValue, ifExists, ifNotExist
+@docs ifEnabled, ifNotEnabled, ifVisible, ifNotVisible, ifVisibleWithinViewport, ifNotVisibleWithinViewport, ifOptionIsSelected, ifNotOptionIsSelected
 @docs ifElementSize, ifElementPosition, ifElementViewPosition
 @docs ifTask, ifDriverCommand
 
@@ -123,44 +123,134 @@ ifValue selector f =
     BranchString (getValue selector) f
 
 
-{-| Executes the list of steps the passed function returns depending
-on whether or not the input field is enabled
+{-| Executes the list of steps if the specified element exists in the DOM
 -}
-ifExists : String -> (Bool -> List Step) -> Step
-ifExists selector f =
-    BranchBool (elementExists selector) f
+ifExists : String -> List Step -> Step
+ifExists selector list =
+    BranchBool (elementExists selector)
+        (\ex ->
+            if ex then
+                list
+            else
+                []
+        )
 
 
-{-| Executes the list of steps the passed function returns depending
-on whether or not the element exists
+{-| Executes the list of steps if the specified element does not exist in the DOM
 -}
-ifEnabled : String -> (Bool -> List Step) -> Step
-ifEnabled selector f =
-    BranchBool (elementEnabled selector) f
+ifNotExist : String -> List Step -> Step
+ifNotExist selector list =
+    BranchBool (elementExists selector)
+        (\ex ->
+            if ex then
+                []
+            else
+                list
+        )
 
 
-{-| Executes the list of steps the passed function returns depending
-on whether or not the element is visible
+{-| Executes the list of steps if the input element is enabled
 -}
-ifVisible : String -> (Bool -> List Step) -> Step
-ifVisible selector f =
-    BranchBool (elementVisible selector) f
+ifEnabled : String -> List Step -> Step
+ifEnabled selector list =
+    BranchBool (elementEnabled selector)
+        (\en ->
+            if en then
+                list
+            else
+                []
+        )
 
 
-{-| Executes the list of steps the passed function returns depending
-on whether or not the element is visible within the viewport
+{-| Executes the list of steps if the input element is not enabled
 -}
-ifVisibleWithinViewport : String -> (Bool -> List Step) -> Step
-ifVisibleWithinViewport selector f =
-    BranchBool (elementVisibleWithinViewport selector) f
+ifNotEnabled : String -> List Step -> Step
+ifNotEnabled selector list =
+    BranchBool (elementEnabled selector)
+        (\en ->
+            if en then
+                []
+            else
+                list
+        )
 
 
-{-| Executes the list of steps the passed function returns depending
-on whether or not the options in the select box is selected
+{-| Executes the list of steps if element is visible
 -}
-ifOptionIsSelected : String -> (Bool -> List Step) -> Step
-ifOptionIsSelected selector f =
-    BranchBool (optionIsSelected selector) f
+ifVisible : String -> List Step -> Step
+ifVisible selector list =
+    BranchBool (elementVisible selector)
+        (\res ->
+            if res then
+                list
+            else
+                []
+        )
+
+
+{-| Executes the list of steps if element is not visible
+-}
+ifNotVisible : String -> List Step -> Step
+ifNotVisible selector list =
+    BranchBool (elementVisible selector)
+        (\res ->
+            if res then
+                []
+            else
+                list
+        )
+
+
+{-| Executes the list of steps if the element is visible within the viewport
+-}
+ifVisibleWithinViewport : String -> List Step -> Step
+ifVisibleWithinViewport selector list =
+    BranchBool (elementVisibleWithinViewport selector)
+        (\res ->
+            if res then
+                list
+            else
+                []
+        )
+
+
+{-| Executes the list of steps if the element is not visible within the viewport
+-}
+ifNotVisibleWithinViewport : String -> List Step -> Step
+ifNotVisibleWithinViewport selector list =
+    BranchBool (elementVisibleWithinViewport selector)
+        (\res ->
+            if res then
+                []
+            else
+                list
+        )
+
+
+{-| Executes the list of steps if the option in the select box is selected
+-}
+ifOptionIsSelected : String -> List Step -> Step
+ifOptionIsSelected selector list =
+    BranchBool (optionIsSelected selector)
+        (\res ->
+            if res then
+                list
+            else
+                []
+        )
+
+
+{-| Executes the list of steps if the option in the select box is not selected
+-}
+ifNotOptionIsSelected : String -> List Step -> Step
+ifNotOptionIsSelected selector list =
+    BranchBool (optionIsSelected selector)
+        (\res ->
+            if res then
+                []
+            else
+                list
+        )
 
 
 {-| Executes the list of steps the passed function returns depending
