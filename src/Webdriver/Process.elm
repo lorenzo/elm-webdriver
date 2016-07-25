@@ -23,7 +23,7 @@ type Msg
     | Initiated Wd.Browser
     | Process (Maybe StepResult)
     | ProcessBranch (List Step)
-    | OnError String Wd.Error
+    | OnError String Wd.Error (Maybe Screenshot)
     | Finish
 
 
@@ -56,10 +56,14 @@ type alias Expectation =
     Expect.Expectation
 
 
+type alias Screenshot =
+    String
+
+
 {-| The result of running a test step
 -}
 type StepResult
-    = StepResult String Expectation
+    = StepResult String (Maybe Screenshot) Expectation
 
 
 {-| The model used by this module to represent its state
@@ -119,11 +123,11 @@ update msg model =
             in
                 ( newModel, process action browser, outMsg )
 
-        ( ( Just browser, exs, actions ), OnError actionDesc error ) ->
+        ( ( Just browser, exs, actions ), OnError actionDesc error screenshot ) ->
             let
                 message =
                     fail (errorMessage error)
-                        |> StepResult actionDesc
+                        |> StepResult actionDesc screenshot
 
                 newMessage =
                     Just message
@@ -180,10 +184,12 @@ errorMessage error =
 
 startSession : Options -> Cmd Msg
 startSession options =
-    perform
-        (OnError "Connecting to Selenium Server")
+    perform identity
         Initiated
-        (Wd.open options |> Task.map (\( _, b ) -> b))
+        (Wd.open options
+            |> Task.map (\( _, browser ) -> browser)
+            |> Task.mapError (\error -> OnError "Connecting to Selenium Server" error Nothing)
+        )
 
 
 finishSession : Wd.Browser -> Cmd Msg
@@ -231,11 +237,23 @@ validateSelector selector browser =
             )
 
 
-convertAssertion : String -> (a -> Expectation) -> Task Wd.Error a -> Cmd Msg
-convertAssertion description assert task =
+convertAssertion : Wd.Browser -> String -> (a -> Expectation) -> Task Wd.Error a -> Cmd Msg
+convertAssertion browser description assert task =
     task
-        |> Task.map (assert >> StepResult description >> Just)
-        |> Task.perform (OnError description) Process
+        |> Task.map (assert >> StepResult description Nothing >> Just)
+        |> screenshotOnError browser description
+        |> Task.perform identity Process
+
+
+screenshotOnError : Wd.Browser -> String -> Task Wd.Error a -> Task Msg a
+screenshotOnError browser desc task =
+    task
+        `Task.onError`
+            (\error ->
+                Wd.viewportScreenshot browser
+                    `Task.onError` (\error -> Task.fail (OnError desc error Nothing))
+                    `Task.andThen` (\screenshot -> Task.fail (OnError desc error (Just screenshot)))
+            )
 
 
 process : Step -> Wd.Browser -> Cmd Msg
@@ -245,57 +263,59 @@ process action browser =
             case action of
                 AssertionString desc step assert ->
                     processStringStep step browser
-                        |> convertAssertion desc assert
+                        |> convertAssertion browser desc assert
 
                 AssertionMaybe desc step assert ->
                     processMaybeStep step browser
-                        |> convertAssertion desc assert
+                        |> convertAssertion browser desc assert
 
                 AssertionGeometry desc step assert ->
                     processGeometryStep step browser
-                        |> convertAssertion desc assert
+                        |> convertAssertion browser desc assert
 
                 AssertionBool desc step assert ->
                     processBoolStep step browser
-                        |> convertAssertion desc assert
+                        |> convertAssertion browser desc assert
 
                 AssertionInt desc step assert ->
                     processIntStep step browser
-                        |> convertAssertion desc assert
+                        |> convertAssertion browser desc assert
 
                 AssertionTask desc task ->
                     task
-                        |> Task.map (StepResult desc >> Just)
+                        |> Task.map (StepResult desc Nothing >> Just)
                         |> perform (always <| Process Nothing) Process
 
                 AssertionWebdriver desc task ->
                     task browser
-                        |> Task.map (StepResult desc >> Just)
-                        |> perform (OnError desc) Process
+                        |> Task.map (StepResult desc Nothing >> Just)
+                        |> screenshotOnError browser desc
+                        |> perform identity Process
 
                 ReturningUnit step ->
                     processStep step browser
-                        |> perform (OnError (toString step)) (always <| Process Nothing)
+                        |> screenshotOnError browser (toString step)
+                        |> perform identity (always <| Process Nothing)
 
                 BranchMaybe step decider ->
                     processMaybeStep step browser
-                        |> performBranch decider
+                        |> performBranch browser decider
 
                 BranchString step decider ->
                     processStringStep step browser
-                        |> performBranch decider
+                        |> performBranch browser decider
 
                 BranchBool step decider ->
                     processBoolStep step browser
-                        |> performBranch decider
+                        |> performBranch browser decider
 
                 BranchGeometry step decider ->
                     processGeometryStep step browser
-                        |> performBranch decider
+                        |> performBranch browser decider
 
                 BranchInt step decider ->
                     processIntStep step browser
-                        |> performBranch decider
+                        |> performBranch browser decider
 
                 BranchTask task ->
                     task
@@ -304,16 +324,18 @@ process action browser =
 
                 BranchWebdriver task ->
                     task browser
-                        |> Task.perform (OnError "Resolving custom webdriver command branch") ProcessBranch
+                        |> screenshotOnError browser "Resolving custom webdriver command branch"
+                        |> Task.perform identity ProcessBranch
     in
         command
 
 
-performBranch : (a -> List Step) -> Task Error a -> Cmd Msg
-performBranch decider task =
+performBranch : Wd.Browser -> (a -> List Step) -> Task Error a -> Cmd Msg
+performBranch browser decider task =
     task
+        |> screenshotOnError browser "Resolving branch"
         |> Task.map (resolveBranch decider)
-        |> Task.perform (OnError "Resolving branch") identity
+        |> Task.perform identity identity
 
 
 resolveBranch : (a -> List Step) -> a -> Msg

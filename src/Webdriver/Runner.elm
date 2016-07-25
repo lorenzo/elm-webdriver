@@ -61,7 +61,7 @@ type alias RunStatus =
 
 
 type alias Summary =
-    { output : String, passed : Int, failed : Int }
+    { output : String, passed : Int, failed : Int, screenshots : List String }
 
 
 type alias SingleRun =
@@ -124,7 +124,7 @@ initModel options runs =
     { runs = runs
     , options = options
     , sessions = Dict.empty
-    , summary = { output = "", passed = 0, failed = 0 }
+    , summary = { output = "", passed = 0, failed = 0, screenshots = [] }
     , initTimes = Dict.empty
     , startTimes = Dict.empty
     , statuses = Dict.empty
@@ -331,7 +331,7 @@ updateStatus runName thisModel remaining result =
     let
         failed =
             case result of
-                Just (StepResult desc res) ->
+                Just (StepResult desc _ res) ->
                     res
                         |> Expect.getFailure
                         |> Maybe.map (always True)
@@ -386,17 +386,17 @@ collectLog ( _, expectations, _ ) =
     expectations
         |> List.filterMap identity
         |> List.reverse
-        |> toOutput { output = "", passed = 0, failed = 0 }
+        |> toOutput { output = "", passed = 0, failed = 0, screenshots = [] } []
 
 
-toOutput : Summary -> List StepResult -> Summary
-toOutput summary expectations =
+toOutput : Summary -> List (Maybe String) -> List StepResult -> Summary
+toOutput summary screenshots expectations =
     case expectations of
-        (StepResult desc x) :: xs ->
-            toOutput (fromExpectation desc x summary) xs
+        (StepResult desc screenshot x) :: xs ->
+            toOutput (fromExpectation desc x summary) (screenshot :: screenshots) xs
 
         [] ->
-            { summary | output = summary.output ++ "\n\n" }
+            { summary | output = summary.output ++ "\n\n", screenshots = List.filterMap identity screenshots }
 
 
 fromExpectation : String -> Expectation -> Summary -> Summary
@@ -425,6 +425,7 @@ fromExpectation description expectation summary =
                 { output = summary.output ++ newOutput
                 , failed = summary.failed + 1
                 , passed = summary.passed
+                , screenshots = summary.screenshots
                 }
 
 
