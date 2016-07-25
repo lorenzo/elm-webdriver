@@ -1,6 +1,6 @@
 {
   "name": "elm-webdriver",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Elm bridge for Webdriver.io and testing utilities",
   "main": "index.js",
   "engines": {
