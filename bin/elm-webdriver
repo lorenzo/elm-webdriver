@@ -13,7 +13,8 @@ else
 	FILE="Main.elm"
 fi
 
-MY_PATH=`dirname "$0"`
+MY_PATH=`readlink -f $0`
+MY_PATH=`dirname "$MY_PATH"`
 TARGET=__main.js
 TARGET=`readlink -f $TARGET`
 
