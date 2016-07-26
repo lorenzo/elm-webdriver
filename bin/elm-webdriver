@@ -15,7 +15,7 @@ fi
 
 MY_PATH=`dirname "$0"`
 TARGET=__main.js
-TARGET=`realpath $TARGET`
+TARGET=`readlink -f $TARGET`
 
 compile() {
 	elm-make "$FILE" --output "$1" > /dev/null
