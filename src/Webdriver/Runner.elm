@@ -57,6 +57,7 @@ type alias RunStatus =
     { failed : Bool
     , total : Int
     , remaining : Int
+    , nextStep : String
     }
 
 
@@ -136,6 +137,7 @@ initStatus total =
     { failed = False
     , total = total
     , remaining = total
+    , nextStep = "Waiting for start"
     }
 
 
@@ -314,8 +316,8 @@ delegateMessage runName action subModel thisModel =
                         |> Task.perform never identity
                     )
 
-                Progress remaining result ->
-                    updateStatus runName updatedModel remaining result
+                Progress remaining result nextStep ->
+                    updateStatus runName updatedModel remaining result nextStep
 
                 None ->
                     ( updatedModel, Cmd.none )
@@ -326,8 +328,8 @@ delegateMessage runName action subModel thisModel =
         ( newModel, Cmd.batch [ reportCommands, subCommand ] )
 
 
-updateStatus : String -> Model -> Int -> Maybe StepResult -> ( Model, Cmd Msg )
-updateStatus runName thisModel remaining result =
+updateStatus : String -> Model -> Int -> Maybe StepResult -> String -> ( Model, Cmd Msg )
+updateStatus runName thisModel remaining result nextStep =
     let
         failed =
             case result of
@@ -341,7 +343,11 @@ updateStatus runName thisModel remaining result =
                     False
 
         updater status =
-            { status | remaining = remaining, failed = status.failed || failed }
+            { status
+                | remaining = remaining
+                , failed = status.failed || failed
+                , nextStep = nextStep
+            }
 
         newStatuses =
             Dict.update runName (Maybe.map updater) thisModel.statuses

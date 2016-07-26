@@ -7,6 +7,8 @@ module Webdriver.Step
         , BoolStep(..)
         , GeometryStep(..)
         , IntStep(..)
+        , stepName
+        , withName
         , getCookie
         , cookieExists
         , cookieNotExists
@@ -38,6 +40,10 @@ type alias Selector =
     String
 
 
+type alias Name =
+    String
+
+
 type alias Expectation =
     Expect.Expectation
 
@@ -45,21 +51,21 @@ type alias Expectation =
 {-| The valid actions that can be executed in the browser
 -}
 type Step
-    = ReturningUnit UnitStep
-    | BranchMaybe MaybeStep (Maybe String -> List Step)
-    | BranchString StringStep (String -> List Step)
-    | BranchBool BoolStep (Bool -> List Step)
-    | BranchGeometry GeometryStep (( Int, Int ) -> List Step)
-    | BranchInt IntStep (Int -> List Step)
-    | BranchTask (Task Never (List Step))
-    | BranchWebdriver (Wd.Browser -> Task Wd.Error (List Step))
-    | AssertionMaybe String MaybeStep (Maybe String -> Expectation)
-    | AssertionString String StringStep (String -> Expectation)
-    | AssertionBool String BoolStep (Bool -> Expectation)
-    | AssertionGeometry String GeometryStep (( Int, Int ) -> Expectation)
-    | AssertionInt String IntStep (Int -> Expectation)
-    | AssertionTask String (Task Never Expectation)
-    | AssertionWebdriver String (Wd.Browser -> Task Wd.Error Expectation)
+    = ReturningUnit Name UnitStep
+    | BranchMaybe Name MaybeStep (Maybe String -> List Step)
+    | BranchString Name StringStep (String -> List Step)
+    | BranchBool Name BoolStep (Bool -> List Step)
+    | BranchGeometry Name GeometryStep (( Int, Int ) -> List Step)
+    | BranchInt Name IntStep (Int -> List Step)
+    | BranchTask Name (Task Never (List Step))
+    | BranchWebdriver Name (Wd.Browser -> Task Wd.Error (List Step))
+    | AssertionMaybe Name MaybeStep (Maybe String -> Expectation)
+    | AssertionString Name StringStep (String -> Expectation)
+    | AssertionBool Name BoolStep (Bool -> Expectation)
+    | AssertionGeometry Name GeometryStep (( Int, Int ) -> Expectation)
+    | AssertionInt Name IntStep (Int -> Expectation)
+    | AssertionTask Name (Task Never Expectation)
+    | AssertionWebdriver Name (Wd.Browser -> Task Wd.Error Expectation)
 
 
 type UnitStep
@@ -132,6 +138,108 @@ type GeometryStep
 
 type IntStep
     = CountElements Selector
+
+
+{-| Returns the human readable name of the step
+-}
+stepName : Step -> String
+stepName step =
+    case step of
+        ReturningUnit name _ ->
+            name
+
+        BranchMaybe name _ _ ->
+            name
+
+        BranchString name _ _ ->
+            name
+
+        BranchBool name _ _ ->
+            name
+
+        BranchGeometry name _ _ ->
+            name
+
+        BranchInt name _ _ ->
+            name
+
+        BranchTask name _ ->
+            name
+
+        BranchWebdriver name _ ->
+            name
+
+        AssertionMaybe name _ _ ->
+            name
+
+        AssertionString name _ _ ->
+            name
+
+        AssertionBool name _ _ ->
+            name
+
+        AssertionGeometry name _ _ ->
+            name
+
+        AssertionInt name _ _ ->
+            name
+
+        AssertionTask name _ ->
+            name
+
+        AssertionWebdriver name _ ->
+            name
+
+
+{-| Gives a new human readable name to an existing step
+-}
+withName : String -> Step -> Step
+withName name step =
+    case step of
+        ReturningUnit _ a ->
+            ReturningUnit name a
+
+        BranchMaybe _ a b ->
+            BranchMaybe name a b
+
+        BranchString _ a b ->
+            BranchString name a b
+
+        BranchBool _ a b ->
+            BranchBool name a b
+
+        BranchGeometry _ a b ->
+            BranchGeometry name a b
+
+        BranchInt _ a b ->
+            BranchInt name a b
+
+        BranchTask _ a ->
+            BranchTask name a
+
+        BranchWebdriver _ a ->
+            BranchWebdriver name a
+
+        AssertionMaybe _ a b ->
+            AssertionMaybe name a b
+
+        AssertionString _ a b ->
+            AssertionString name a b
+
+        AssertionBool _ a b ->
+            AssertionBool name a b
+
+        AssertionGeometry _ a b ->
+            AssertionGeometry name a b
+
+        AssertionInt _ a b ->
+            AssertionInt name a b
+
+        AssertionTask _ a ->
+            AssertionTask name a
+
+        AssertionWebdriver _ a ->
+            AssertionWebdriver name a
 
 
 {-| Returns the value of a cookie by name

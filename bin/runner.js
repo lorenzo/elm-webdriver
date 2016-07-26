@@ -30,7 +30,7 @@ if (process.argv[3] == "--filter" || process.argv[3] == "-f") {
 var main = elm.Main.worker({filter: filter});
 var statusBars = {};
 var summaries = {};
-var defaultSchema = "\n:name.magenta\n :bar.green :current/:total (:percent)";
+var defaultSchema = "\n:name.magenta\n :bar.green :current/:total (:percent)\n:executing";
 
 main.ports.emitStatus.subscribe(function (statuses) {
   statuses.forEach(function (status) {
@@ -39,7 +39,10 @@ main.ports.emitStatus.subscribe(function (statuses) {
       total : status[1].total
     });
 
-    statusBars[status[0]].tick(0, {name: status[0]});
+    statusBars[status[0]].tick(0, {
+      name: status[0],
+      executing: "→ " + status[1].nextStep
+    });
   });
 });
 
@@ -53,11 +56,15 @@ main.ports.emitStatusUpdate.subscribe(function (statuses) {
       var ticks =  (status[1].total - status[1].remaining) - bar.current;
 
       if (status[1].failed) {
-        bar.setSchema(defaultSchema.replace(':bar.green', ':bar.red'), {name: status[0]});
+        bar.setSchema(defaultSchema.replace(':bar.green', ':bar.red'), {
+          name: status[0],
+          executing: "→ " + status[1].nextStep
+        });
       }
 
       bar.tick(ticks, {
-        name: status[0]
+        name: status[0],
+        executing: "→ " + status[1].nextStep
       });
     });
 });

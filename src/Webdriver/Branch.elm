@@ -30,14 +30,17 @@ on the value of the specified cookie
 -}
 ifCookie : String -> (Maybe String -> List Step) -> Step
 ifCookie name f =
-    BranchMaybe (getCookie name) f
+    BranchMaybe ("Check cookie '" ++ name ++ "' value and execute branch")
+        (getCookie name)
+        f
 
 
 {-| Executes the provided list of steps if the specified cookie exists
 -}
 ifCookieExists : String -> List Step -> Step
 ifCookieExists name list =
-    BranchBool (cookieExists name)
+    BranchBool ("Check if the cookie '" ++ name ++ "' exists and execute branch")
+        (cookieExists name)
         (\res ->
             if res then
                 list
@@ -50,7 +53,8 @@ ifCookieExists name list =
 -}
 ifCookieNotExists : String -> List Step -> Step
 ifCookieNotExists name list =
-    BranchBool (cookieNotExists name)
+    BranchBool ("Check if the cookie '" ++ name ++ "' does not exist and execute branch")
+        (cookieNotExists name)
         (\res ->
             if res then
                 list
@@ -64,7 +68,7 @@ on the current url
 -}
 ifUrl : (String -> List Step) -> Step
 ifUrl f =
-    BranchString getUrl f
+    BranchString "Check current url and execute branch" getUrl f
 
 
 {-| Executes the list of steps the passed function returns depending
@@ -72,7 +76,7 @@ on the current page title
 -}
 ifTitle : (String -> List Step) -> Step
 ifTitle f =
-    BranchString getTitle f
+    BranchString "Check current title and execute branch" getTitle f
 
 
 {-| Executes the list of steps the passed function returns depending
@@ -80,7 +84,7 @@ on the current page source
 -}
 ifPageHTML : (String -> List Step) -> Step
 ifPageHTML f =
-    BranchString getPageHTML f
+    BranchString "Check HTML and execute branch" getPageHTML f
 
 
 {-| Executes the list of steps the passed function returns depending
@@ -88,7 +92,9 @@ on the value of the specified attribute in the given element
 -}
 ifAttribute : String -> String -> (Maybe String -> List Step) -> Step
 ifAttribute selector name f =
-    BranchMaybe (getAttribute selector name) f
+    BranchMaybe ("Check the '" ++ name ++ "' attribute for <" ++ selector ++ "> and execute branch")
+        (getAttribute selector name)
+        f
 
 
 {-| Executes the list of steps the passed function returns depending
@@ -96,7 +102,9 @@ on the value of the specified css attribute in the given element
 -}
 ifCss : String -> String -> (Maybe String -> List Step) -> Step
 ifCss selector name f =
-    BranchMaybe (getCssProperty selector name) f
+    BranchMaybe ("Check the '" ++ name ++ "' css attribute for <" ++ selector ++ "> and execute branch")
+        (getCssProperty selector name)
+        f
 
 
 {-| Executes the list of steps the passed function returns depending
@@ -104,7 +112,9 @@ on the value of the HTMl for the given element
 -}
 ifElementHTML : String -> (String -> List Step) -> Step
 ifElementHTML selector f =
-    BranchString (getElementHTML selector) f
+    BranchString ("Check the HTML for <" ++ selector ++ "> and execute branch")
+        (getElementHTML selector)
+        f
 
 
 {-| Executes the list of steps the passed function returns depending
@@ -112,7 +122,9 @@ on the value of the text node of the given element
 -}
 ifText : String -> (String -> List Step) -> Step
 ifText selector f =
-    BranchString (getText selector) f
+    BranchString ("Check the text for <" ++ selector ++ "> and execute branch")
+        (getText selector)
+        f
 
 
 {-| Executes the list of steps the passed function returns depending
@@ -120,14 +132,17 @@ on the value of the specified input field
 -}
 ifValue : String -> (String -> List Step) -> Step
 ifValue selector f =
-    BranchString (getValue selector) f
+    BranchString ("Check the value for the <" ++ selector ++ "> input and execute branch")
+        (getValue selector)
+        f
 
 
 {-| Executes the list of steps if the specified element exists in the DOM
 -}
 ifExists : String -> List Step -> Step
 ifExists selector list =
-    BranchBool (elementExists selector)
+    BranchBool ("Check if <" ++ selector ++ "> is present and execute branch")
+        (elementExists selector)
         (\ex ->
             if ex then
                 list
@@ -140,7 +155,8 @@ ifExists selector list =
 -}
 ifNotExist : String -> List Step -> Step
 ifNotExist selector list =
-    BranchBool (elementExists selector)
+    BranchBool ("Check if <" ++ selector ++ "> is not present and execute branch")
+        (elementExists selector)
         (\ex ->
             if ex then
                 []
@@ -153,7 +169,8 @@ ifNotExist selector list =
 -}
 ifEnabled : String -> List Step -> Step
 ifEnabled selector list =
-    BranchBool (elementEnabled selector)
+    BranchBool ("Check if the <" ++ selector ++ "> input is enabled and execute branch")
+        (elementEnabled selector)
         (\en ->
             if en then
                 list
@@ -166,7 +183,8 @@ ifEnabled selector list =
 -}
 ifNotEnabled : String -> List Step -> Step
 ifNotEnabled selector list =
-    BranchBool (elementEnabled selector)
+    BranchBool ("Check if the <" ++ selector ++ "> input is not present and execute branch")
+        (elementEnabled selector)
         (\en ->
             if en then
                 []
@@ -179,7 +197,8 @@ ifNotEnabled selector list =
 -}
 ifVisible : String -> List Step -> Step
 ifVisible selector list =
-    BranchBool (elementVisible selector)
+    BranchBool ("Check if <" ++ selector ++ "> is visible and execute branch")
+        (elementVisible selector)
         (\res ->
             if res then
                 list
@@ -192,7 +211,8 @@ ifVisible selector list =
 -}
 ifNotVisible : String -> List Step -> Step
 ifNotVisible selector list =
-    BranchBool (elementVisible selector)
+    BranchBool ("Check if <" ++ selector ++ "> is not visible and execute branch")
+        (elementVisible selector)
         (\res ->
             if res then
                 []
@@ -205,7 +225,8 @@ ifNotVisible selector list =
 -}
 ifVisibleWithinViewport : String -> List Step -> Step
 ifVisibleWithinViewport selector list =
-    BranchBool (elementVisibleWithinViewport selector)
+    BranchBool ("Check if <" ++ selector ++ "> is visible within the viewport and execute branch")
+        (elementVisibleWithinViewport selector)
         (\res ->
             if res then
                 list
@@ -218,7 +239,8 @@ ifVisibleWithinViewport selector list =
 -}
 ifNotVisibleWithinViewport : String -> List Step -> Step
 ifNotVisibleWithinViewport selector list =
-    BranchBool (elementVisibleWithinViewport selector)
+    BranchBool ("Check if <" ++ selector ++ "> is not visible within the viewport and execute branch")
+        (elementVisibleWithinViewport selector)
         (\res ->
             if res then
                 []
@@ -231,7 +253,8 @@ ifNotVisibleWithinViewport selector list =
 -}
 ifOptionIsSelected : String -> List Step -> Step
 ifOptionIsSelected selector list =
-    BranchBool (optionIsSelected selector)
+    BranchBool ("Check if the option <" ++ selector ++ "> is selected and execute branch")
+        (optionIsSelected selector)
         (\res ->
             if res then
                 list
@@ -244,7 +267,8 @@ ifOptionIsSelected selector list =
 -}
 ifNotOptionIsSelected : String -> List Step -> Step
 ifNotOptionIsSelected selector list =
-    BranchBool (optionIsSelected selector)
+    BranchBool ("Check if the option <" ++ selector ++ "> is not selected and execute branch")
+        (optionIsSelected selector)
         (\res ->
             if res then
                 []
@@ -258,7 +282,9 @@ on the size (width, height) of the element
 -}
 ifElementSize : String -> (( Int, Int ) -> List Step) -> Step
 ifElementSize selector f =
-    BranchGeometry (getElementSize selector) f
+    BranchGeometry ("Check the size of <" ++ selector ++ "> and execute branch")
+        (getElementSize selector)
+        f
 
 
 {-| Executes the list of steps the passed function returns depending
@@ -266,7 +292,9 @@ on the location (x, y) of the element
 -}
 ifElementPosition : String -> (( Int, Int ) -> List Step) -> Step
 ifElementPosition selector f =
-    BranchGeometry (getElementPosition selector) f
+    BranchGeometry ("Check the position of <" ++ selector ++ "> and execute branch")
+        (getElementPosition selector)
+        f
 
 
 {-| Executes the list of steps the passed function returns depending
@@ -274,7 +302,9 @@ on the location (x, y) of the element relative to the current viewport
 -}
 ifElementViewPosition : String -> (( Int, Int ) -> List Step) -> Step
 ifElementViewPosition selector f =
-    BranchGeometry (getElementViewPosition selector) f
+    BranchGeometry ("Check the position of <" ++ selector ++ "> in the viewport and execute branch")
+        (getElementViewPosition selector)
+        f
 
 
 {-| Executes the list of steps the passed function returns depending
@@ -282,14 +312,16 @@ on the number of elements returned by the selector
 -}
 ifElementCount : String -> (Int -> List Step) -> Step
 ifElementCount selector f =
-    BranchInt (countElements selector) f
+    BranchInt ("Check the amout of elements for <" ++ selector ++ "> and execute branch")
+        (countElements selector)
+        f
 
 
 {-| Executes the list of steps returned as the result of performing a Task
 -}
 ifTask : Task Never (List Step) -> Step
 ifTask theTask =
-    BranchTask theTask
+    BranchTask "Perform a custom task and execute branch" theTask
 
 
 {-| Executes the list of steps resulting of executing a LowLevel Webdriver task. This allows you to create
@@ -303,4 +335,4 @@ ifDriverCommand partiallyAppliedTask f =
             partiallyAppliedTask browser
                 |> Task.map f
     in
-        BranchWebdriver task
+        BranchWebdriver "Preform a custom webdriver command and execute task" task

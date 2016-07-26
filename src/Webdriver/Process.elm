@@ -31,7 +31,7 @@ type Msg
 -}
 type OutMsg
     = Spawned
-    | Progress Int (Maybe StepResult)
+    | Progress Int (Maybe StepResult) String
     | Finalized
     | None
 
@@ -106,17 +106,17 @@ update msg model =
             in
                 ( newModel, command, Spawned )
 
-        ( ( Just browser, exs, (ReturningUnit End) :: rest ), Process previousExpect ) ->
-            ( ( Nothing, previousExpect :: exs, [] ), finishSession browser, Progress 0 previousExpect )
+        ( ( Just browser, exs, (ReturningUnit name End) :: rest ), Process previousExpect ) ->
+            ( ( Nothing, previousExpect :: exs, [] ), finishSession browser, Progress 0 previousExpect name )
 
         -- Automatically ending the session on last step
         ( ( Just browser, exs, [] ), Process previousExpect ) ->
-            ( ( Nothing, previousExpect :: exs, [] ), finishSession browser, Progress 0 previousExpect )
+            ( ( Nothing, previousExpect :: exs, [] ), finishSession browser, Progress 0 previousExpect "End Session" )
 
         ( ( Just browser, exs, action :: rest ), Process previousExpect ) ->
             let
                 outMsg =
-                    Progress (List.length rest) previousExpect
+                    Progress (List.length rest) previousExpect (stepName action)
 
                 newModel =
                     ( Just browser, previousExpect :: exs, rest )
@@ -143,7 +143,7 @@ update msg model =
                     List.append rest actions
 
                 outMsg =
-                    Progress (List.length newSteps) Nothing
+                    Progress (List.length newSteps) Nothing (stepName action)
 
                 newModel =
                     ( Just browser, exs, newSteps )
@@ -292,48 +292,48 @@ process action browser =
                         |> screenshotOnError browser desc
                         |> perform identity Process
 
-                ReturningUnit step ->
+                ReturningUnit name step ->
                     processStep step browser
-                        |> screenshotOnError browser (toString step)
+                        |> screenshotOnError browser name
                         |> perform identity (always <| Process Nothing)
 
-                BranchMaybe step decider ->
+                BranchMaybe name step decider ->
                     processMaybeStep step browser
-                        |> performBranch browser decider
+                        |> performBranch name browser decider
 
-                BranchString step decider ->
+                BranchString name step decider ->
                     processStringStep step browser
-                        |> performBranch browser decider
+                        |> performBranch name browser decider
 
-                BranchBool step decider ->
+                BranchBool name step decider ->
                     processBoolStep step browser
-                        |> performBranch browser decider
+                        |> performBranch name browser decider
 
-                BranchGeometry step decider ->
+                BranchGeometry name step decider ->
                     processGeometryStep step browser
-                        |> performBranch browser decider
+                        |> performBranch name browser decider
 
-                BranchInt step decider ->
+                BranchInt name step decider ->
                     processIntStep step browser
-                        |> performBranch browser decider
+                        |> performBranch name browser decider
 
-                BranchTask task ->
+                BranchTask _ task ->
                     task
                         |> Task.map (resolveBranch identity)
                         |> Task.perform never identity
 
-                BranchWebdriver task ->
+                BranchWebdriver name task ->
                     task browser
-                        |> screenshotOnError browser "Resolving custom webdriver command branch"
+                        |> screenshotOnError browser name
                         |> Task.perform identity ProcessBranch
     in
         command
 
 
-performBranch : Wd.Browser -> (a -> List Step) -> Task Error a -> Cmd Msg
-performBranch browser decider task =
+performBranch : String -> Wd.Browser -> (a -> List Step) -> Task Error a -> Cmd Msg
+performBranch name browser decider task =
     task
-        |> screenshotOnError browser "Resolving branch"
+        |> screenshotOnError browser name
         |> Task.map (resolveBranch decider)
         |> Task.perform identity identity
 
