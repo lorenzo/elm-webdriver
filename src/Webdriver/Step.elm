@@ -9,6 +9,8 @@ module Webdriver.Step
         , IntStep(..)
         , stepName
         , withName
+        , withScreenshot
+        , initMeta
         , getCookie
         , cookieExists
         , cookieNotExists
@@ -48,24 +50,30 @@ type alias Expectation =
     Expect.Expectation
 
 
+type alias Meta =
+    { name : String
+    , withScreenshot : Bool
+    }
+
+
 {-| The valid actions that can be executed in the browser
 -}
 type Step
-    = ReturningUnit Name UnitStep
-    | BranchMaybe Name MaybeStep (Maybe String -> List Step)
-    | BranchString Name StringStep (String -> List Step)
-    | BranchBool Name BoolStep (Bool -> List Step)
-    | BranchGeometry Name GeometryStep (( Int, Int ) -> List Step)
-    | BranchInt Name IntStep (Int -> List Step)
-    | BranchTask Name (Task Never (List Step))
-    | BranchWebdriver Name (Wd.Browser -> Task Wd.Error (List Step))
-    | AssertionMaybe Name MaybeStep (Maybe String -> Expectation)
-    | AssertionString Name StringStep (String -> Expectation)
-    | AssertionBool Name BoolStep (Bool -> Expectation)
-    | AssertionGeometry Name GeometryStep (( Int, Int ) -> Expectation)
-    | AssertionInt Name IntStep (Int -> Expectation)
-    | AssertionTask Name (Task Never Expectation)
-    | AssertionWebdriver Name (Wd.Browser -> Task Wd.Error Expectation)
+    = ReturningUnit Meta UnitStep
+    | BranchMaybe Meta MaybeStep (Maybe String -> List Step)
+    | BranchString Meta StringStep (String -> List Step)
+    | BranchBool Meta BoolStep (Bool -> List Step)
+    | BranchGeometry Meta GeometryStep (( Int, Int ) -> List Step)
+    | BranchInt Meta IntStep (Int -> List Step)
+    | BranchTask Meta (Task Never (List Step))
+    | BranchWebdriver Meta (Wd.Browser -> Task Wd.Error (List Step))
+    | AssertionMaybe Meta MaybeStep (Maybe String -> Expectation)
+    | AssertionString Meta StringStep (String -> Expectation)
+    | AssertionBool Meta BoolStep (Bool -> Expectation)
+    | AssertionGeometry Meta GeometryStep (( Int, Int ) -> Expectation)
+    | AssertionInt Meta IntStep (Int -> Expectation)
+    | AssertionTask Meta (Task Never Expectation)
+    | AssertionWebdriver Meta (Wd.Browser -> Task Wd.Error Expectation)
 
 
 type UnitStep
@@ -140,106 +148,128 @@ type IntStep
     = CountElements Selector
 
 
+initMeta : String -> Meta
+initMeta name =
+    { name = name, withScreenshot = False }
+
+
+getMetaProperty : (Meta -> a) -> Step -> a
+getMetaProperty getter step =
+    case step of
+        ReturningUnit meta _ ->
+            getter meta
+
+        BranchMaybe meta _ _ ->
+            getter meta
+
+        BranchString meta _ _ ->
+            getter meta
+
+        BranchBool meta _ _ ->
+            getter meta
+
+        BranchGeometry meta _ _ ->
+            getter meta
+
+        BranchInt meta _ _ ->
+            getter meta
+
+        BranchTask meta _ ->
+            getter meta
+
+        BranchWebdriver meta _ ->
+            getter meta
+
+        AssertionMaybe meta _ _ ->
+            getter meta
+
+        AssertionString meta _ _ ->
+            getter meta
+
+        AssertionBool meta _ _ ->
+            getter meta
+
+        AssertionGeometry meta _ _ ->
+            getter meta
+
+        AssertionInt meta _ _ ->
+            getter meta
+
+        AssertionTask meta _ ->
+            getter meta
+
+        AssertionWebdriver meta _ ->
+            getter meta
+
+
+setMetaProperty : (Meta -> Meta) -> Step -> Step
+setMetaProperty setter step =
+    case step of
+        ReturningUnit meta a ->
+            ReturningUnit (setter meta) a
+
+        BranchMaybe meta a b ->
+            BranchMaybe (setter meta) a b
+
+        BranchString meta a b ->
+            BranchString (setter meta) a b
+
+        BranchBool meta a b ->
+            BranchBool (setter meta) a b
+
+        BranchGeometry meta a b ->
+            BranchGeometry (setter meta) a b
+
+        BranchInt meta a b ->
+            BranchInt (setter meta) a b
+
+        BranchTask meta a ->
+            BranchTask (setter meta) a
+
+        BranchWebdriver meta a ->
+            BranchWebdriver (setter meta) a
+
+        AssertionMaybe meta a b ->
+            AssertionMaybe (setter meta) a b
+
+        AssertionString meta a b ->
+            AssertionString (setter meta) a b
+
+        AssertionBool meta a b ->
+            AssertionBool (setter meta) a b
+
+        AssertionGeometry meta a b ->
+            AssertionGeometry (setter meta) a b
+
+        AssertionInt meta a b ->
+            AssertionInt (setter meta) a b
+
+        AssertionTask meta a ->
+            AssertionTask (setter meta) a
+
+        AssertionWebdriver meta a ->
+            AssertionWebdriver (setter meta) a
+
+
 {-| Returns the human readable name of the step
 -}
 stepName : Step -> String
 stepName step =
-    case step of
-        ReturningUnit name _ ->
-            name
-
-        BranchMaybe name _ _ ->
-            name
-
-        BranchString name _ _ ->
-            name
-
-        BranchBool name _ _ ->
-            name
-
-        BranchGeometry name _ _ ->
-            name
-
-        BranchInt name _ _ ->
-            name
-
-        BranchTask name _ ->
-            name
-
-        BranchWebdriver name _ ->
-            name
-
-        AssertionMaybe name _ _ ->
-            name
-
-        AssertionString name _ _ ->
-            name
-
-        AssertionBool name _ _ ->
-            name
-
-        AssertionGeometry name _ _ ->
-            name
-
-        AssertionInt name _ _ ->
-            name
-
-        AssertionTask name _ ->
-            name
-
-        AssertionWebdriver name _ ->
-            name
+    getMetaProperty .name step
 
 
 {-| Gives a new human readable name to an existing step
 -}
 withName : String -> Step -> Step
 withName name step =
-    case step of
-        ReturningUnit _ a ->
-            ReturningUnit name a
+    setMetaProperty (\meta -> { meta | name = name }) step
 
-        BranchMaybe _ a b ->
-            BranchMaybe name a b
 
-        BranchString _ a b ->
-            BranchString name a b
-
-        BranchBool _ a b ->
-            BranchBool name a b
-
-        BranchGeometry _ a b ->
-            BranchGeometry name a b
-
-        BranchInt _ a b ->
-            BranchInt name a b
-
-        BranchTask _ a ->
-            BranchTask name a
-
-        BranchWebdriver _ a ->
-            BranchWebdriver name a
-
-        AssertionMaybe _ a b ->
-            AssertionMaybe name a b
-
-        AssertionString _ a b ->
-            AssertionString name a b
-
-        AssertionBool _ a b ->
-            AssertionBool name a b
-
-        AssertionGeometry _ a b ->
-            AssertionGeometry name a b
-
-        AssertionInt _ a b ->
-            AssertionInt name a b
-
-        AssertionTask _ a ->
-            AssertionTask name a
-
-        AssertionWebdriver _ a ->
-            AssertionWebdriver name a
+{-| Make the step take a screenshot immediately after it is executed successfully
+-}
+withScreenshot : Bool -> Step -> Step
+withScreenshot enable step =
+    setMetaProperty (\meta -> { meta | withScreenshot = enable }) step
 
 
 {-| Returns the value of a cookie by name

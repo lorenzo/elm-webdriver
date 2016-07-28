@@ -30,7 +30,7 @@ on the value of the specified cookie
 -}
 ifCookie : String -> (Maybe String -> List Step) -> Step
 ifCookie name f =
-    BranchMaybe ("Check cookie '" ++ name ++ "' value and execute branch")
+    BranchMaybe (initMeta <| "Check cookie '" ++ name ++ "' value and execute branch")
         (getCookie name)
         f
 
@@ -39,7 +39,7 @@ ifCookie name f =
 -}
 ifCookieExists : String -> List Step -> Step
 ifCookieExists name list =
-    BranchBool ("Check if the cookie '" ++ name ++ "' exists and execute branch")
+    BranchBool (initMeta <| "Check if the cookie '" ++ name ++ "' exists and execute branch")
         (cookieExists name)
         (\res ->
             if res then
@@ -53,7 +53,7 @@ ifCookieExists name list =
 -}
 ifCookieNotExists : String -> List Step -> Step
 ifCookieNotExists name list =
-    BranchBool ("Check if the cookie '" ++ name ++ "' does not exist and execute branch")
+    BranchBool (initMeta <| "Check if the cookie '" ++ name ++ "' does not exist and execute branch")
         (cookieNotExists name)
         (\res ->
             if res then
@@ -68,7 +68,7 @@ on the current url
 -}
 ifUrl : (String -> List Step) -> Step
 ifUrl f =
-    BranchString "Check current url and execute branch" getUrl f
+    BranchString (initMeta "Check current url and execute branch") getUrl f
 
 
 {-| Executes the list of steps the passed function returns depending
@@ -76,7 +76,7 @@ on the current page title
 -}
 ifTitle : (String -> List Step) -> Step
 ifTitle f =
-    BranchString "Check current title and execute branch" getTitle f
+    BranchString (initMeta "Check current title and execute branch") getTitle f
 
 
 {-| Executes the list of steps the passed function returns depending
@@ -84,7 +84,7 @@ on the current page source
 -}
 ifPageHTML : (String -> List Step) -> Step
 ifPageHTML f =
-    BranchString "Check HTML and execute branch" getPageHTML f
+    BranchString (initMeta "Check HTML and execute branch") getPageHTML f
 
 
 {-| Executes the list of steps the passed function returns depending
@@ -92,7 +92,7 @@ on the value of the specified attribute in the given element
 -}
 ifAttribute : String -> String -> (Maybe String -> List Step) -> Step
 ifAttribute selector name f =
-    BranchMaybe ("Check the '" ++ name ++ "' attribute for <" ++ selector ++ "> and execute branch")
+    BranchMaybe (initMeta <| "Check the '" ++ name ++ "' attribute for <" ++ selector ++ "> and execute branch")
         (getAttribute selector name)
         f
 
@@ -102,7 +102,7 @@ on the value of the specified css attribute in the given element
 -}
 ifCss : String -> String -> (Maybe String -> List Step) -> Step
 ifCss selector name f =
-    BranchMaybe ("Check the '" ++ name ++ "' css attribute for <" ++ selector ++ "> and execute branch")
+    BranchMaybe (initMeta <| "Check the '" ++ name ++ "' css attribute for <" ++ selector ++ "> and execute branch")
         (getCssProperty selector name)
         f
 
@@ -112,7 +112,7 @@ on the value of the HTMl for the given element
 -}
 ifElementHTML : String -> (String -> List Step) -> Step
 ifElementHTML selector f =
-    BranchString ("Check the HTML for <" ++ selector ++ "> and execute branch")
+    BranchString (initMeta <| "Check the HTML for <" ++ selector ++ "> and execute branch")
         (getElementHTML selector)
         f
 
@@ -122,7 +122,7 @@ on the value of the text node of the given element
 -}
 ifText : String -> (String -> List Step) -> Step
 ifText selector f =
-    BranchString ("Check the text for <" ++ selector ++ "> and execute branch")
+    BranchString (initMeta <| "Check the text for <" ++ selector ++ "> and execute branch")
         (getText selector)
         f
 
@@ -132,7 +132,7 @@ on the value of the specified input field
 -}
 ifValue : String -> (String -> List Step) -> Step
 ifValue selector f =
-    BranchString ("Check the value for the <" ++ selector ++ "> input and execute branch")
+    BranchString (initMeta <| "Check the value for the <" ++ selector ++ "> input and execute branch")
         (getValue selector)
         f
 
@@ -141,7 +141,7 @@ ifValue selector f =
 -}
 ifExists : String -> List Step -> Step
 ifExists selector list =
-    BranchBool ("Check if <" ++ selector ++ "> is present and execute branch")
+    BranchBool (initMeta <| "Check if <" ++ selector ++ "> is present and execute branch")
         (elementExists selector)
         (\ex ->
             if ex then
@@ -155,7 +155,7 @@ ifExists selector list =
 -}
 ifNotExist : String -> List Step -> Step
 ifNotExist selector list =
-    BranchBool ("Check if <" ++ selector ++ "> is not present and execute branch")
+    BranchBool (initMeta <| "Check if <" ++ selector ++ "> is not present and execute branch")
         (elementExists selector)
         (\ex ->
             if ex then
@@ -169,7 +169,7 @@ ifNotExist selector list =
 -}
 ifEnabled : String -> List Step -> Step
 ifEnabled selector list =
-    BranchBool ("Check if the <" ++ selector ++ "> input is enabled and execute branch")
+    BranchBool (initMeta <| "Check if the <" ++ selector ++ "> input is enabled and execute branch")
         (elementEnabled selector)
         (\en ->
             if en then
@@ -183,7 +183,7 @@ ifEnabled selector list =
 -}
 ifNotEnabled : String -> List Step -> Step
 ifNotEnabled selector list =
-    BranchBool ("Check if the <" ++ selector ++ "> input is not present and execute branch")
+    BranchBool (initMeta <| "Check if the <" ++ selector ++ "> input is not present and execute branch")
         (elementEnabled selector)
         (\en ->
             if en then
@@ -197,7 +197,7 @@ ifNotEnabled selector list =
 -}
 ifVisible : String -> List Step -> Step
 ifVisible selector list =
-    BranchBool ("Check if <" ++ selector ++ "> is visible and execute branch")
+    BranchBool (initMeta <| "Check if <" ++ selector ++ "> is visible and execute branch")
         (elementVisible selector)
         (\res ->
             if res then
@@ -211,7 +211,7 @@ ifVisible selector list =
 -}
 ifNotVisible : String -> List Step -> Step
 ifNotVisible selector list =
-    BranchBool ("Check if <" ++ selector ++ "> is not visible and execute branch")
+    BranchBool (initMeta <| "Check if <" ++ selector ++ "> is not visible and execute branch")
         (elementVisible selector)
         (\res ->
             if res then
@@ -225,7 +225,7 @@ ifNotVisible selector list =
 -}
 ifVisibleWithinViewport : String -> List Step -> Step
 ifVisibleWithinViewport selector list =
-    BranchBool ("Check if <" ++ selector ++ "> is visible within the viewport and execute branch")
+    BranchBool (initMeta <| "Check if <" ++ selector ++ "> is visible within the viewport and execute branch")
         (elementVisibleWithinViewport selector)
         (\res ->
             if res then
@@ -239,7 +239,7 @@ ifVisibleWithinViewport selector list =
 -}
 ifNotVisibleWithinViewport : String -> List Step -> Step
 ifNotVisibleWithinViewport selector list =
-    BranchBool ("Check if <" ++ selector ++ "> is not visible within the viewport and execute branch")
+    BranchBool (initMeta <| "Check if <" ++ selector ++ "> is not visible within the viewport and execute branch")
         (elementVisibleWithinViewport selector)
         (\res ->
             if res then
@@ -253,7 +253,7 @@ ifNotVisibleWithinViewport selector list =
 -}
 ifOptionIsSelected : String -> List Step -> Step
 ifOptionIsSelected selector list =
-    BranchBool ("Check if the option <" ++ selector ++ "> is selected and execute branch")
+    BranchBool (initMeta <| "Check if the option <" ++ selector ++ "> is selected and execute branch")
         (optionIsSelected selector)
         (\res ->
             if res then
@@ -267,7 +267,7 @@ ifOptionIsSelected selector list =
 -}
 ifNotOptionIsSelected : String -> List Step -> Step
 ifNotOptionIsSelected selector list =
-    BranchBool ("Check if the option <" ++ selector ++ "> is not selected and execute branch")
+    BranchBool (initMeta <| "Check if the option <" ++ selector ++ "> is not selected and execute branch")
         (optionIsSelected selector)
         (\res ->
             if res then
@@ -282,7 +282,7 @@ on the size (width, height) of the element
 -}
 ifElementSize : String -> (( Int, Int ) -> List Step) -> Step
 ifElementSize selector f =
-    BranchGeometry ("Check the size of <" ++ selector ++ "> and execute branch")
+    BranchGeometry (initMeta <| "Check the size of <" ++ selector ++ "> and execute branch")
         (getElementSize selector)
         f
 
@@ -292,7 +292,7 @@ on the location (x, y) of the element
 -}
 ifElementPosition : String -> (( Int, Int ) -> List Step) -> Step
 ifElementPosition selector f =
-    BranchGeometry ("Check the position of <" ++ selector ++ "> and execute branch")
+    BranchGeometry (initMeta <| "Check the position of <" ++ selector ++ "> and execute branch")
         (getElementPosition selector)
         f
 
@@ -302,7 +302,7 @@ on the location (x, y) of the element relative to the current viewport
 -}
 ifElementViewPosition : String -> (( Int, Int ) -> List Step) -> Step
 ifElementViewPosition selector f =
-    BranchGeometry ("Check the position of <" ++ selector ++ "> in the viewport and execute branch")
+    BranchGeometry (initMeta <| "Check the position of <" ++ selector ++ "> in the viewport and execute branch")
         (getElementViewPosition selector)
         f
 
@@ -312,7 +312,7 @@ on the number of elements returned by the selector
 -}
 ifElementCount : String -> (Int -> List Step) -> Step
 ifElementCount selector f =
-    BranchInt ("Check the amout of elements for <" ++ selector ++ "> and execute branch")
+    BranchInt (initMeta <| "Check the amout of elements for <" ++ selector ++ "> and execute branch")
         (countElements selector)
         f
 
@@ -321,7 +321,7 @@ ifElementCount selector f =
 -}
 ifTask : Task Never (List Step) -> Step
 ifTask theTask =
-    BranchTask "Perform a custom task and execute branch" theTask
+    BranchTask (initMeta "Perform a custom task and execute branch") theTask
 
 
 {-| Executes the list of steps resulting of executing a LowLevel Webdriver task. This allows you to create
@@ -335,4 +335,4 @@ ifDriverCommand partiallyAppliedTask f =
             partiallyAppliedTask browser
                 |> Task.map f
     in
-        BranchWebdriver "Preform a custom webdriver command and execute task" task
+        BranchWebdriver (initMeta "Preform a custom webdriver command and execute task") task

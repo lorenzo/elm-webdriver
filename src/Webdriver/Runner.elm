@@ -49,6 +49,7 @@ type alias Model =
     , initTimes : Dict String Time
     , startTimes : Dict String Time
     , statuses : Dict String RunStatus
+    , summaries : Dict String Summary
     , summary : Summary
     }
 
@@ -125,11 +126,17 @@ initModel options runs =
     { runs = runs
     , options = options
     , sessions = Dict.empty
-    , summary = { output = "", passed = 0, failed = 0, screenshots = [] }
+    , summaries = Dict.empty
+    , summary = newSummary
     , initTimes = Dict.empty
     , startTimes = Dict.empty
     , statuses = Dict.empty
     }
+
+
+newSummary : Summary
+newSummary =
+    { output = "", passed = 0, failed = 0, screenshots = [] }
 
 
 initStatus : Int -> RunStatus
@@ -270,12 +277,21 @@ dispatchHelper options ( i, ( name, steps ) ) ( model, msgs ) =
         newStatuses =
             Dict.insert key status model.statuses
 
+        newSummaries =
+            Dict.insert key newSummary model.summaries
+
         dispatchCommand =
             Time.now
                 |> Task.map (StartRun key wMsg)
                 |> Task.perform never identity
     in
-        ( { model | sessions = newSessions, statuses = newStatuses }, dispatchCommand :: msgs )
+        ( { model
+            | sessions = newSessions
+            , statuses = newStatuses
+            , summaries = newSummaries
+          }
+        , dispatchCommand :: msgs
+        )
 
 
 flattenRuns : List ( String, SingleRun ) -> Run -> List ( String, SingleRun )
@@ -328,24 +344,21 @@ delegateMessage runName action subModel thisModel =
         ( newModel, Cmd.batch [ reportCommands, subCommand ] )
 
 
-updateStatus : String -> Model -> Int -> Maybe StepResult -> String -> ( Model, Cmd Msg )
+updateStatus : String -> Model -> Int -> StepResult -> String -> ( Model, Cmd Msg )
 updateStatus runName thisModel remaining result nextStep =
     let
-        failed =
-            case result of
-                Just (StepResult desc _ res) ->
-                    res
-                        |> Expect.getFailure
-                        |> Maybe.map (always True)
-                        |> Maybe.withDefault False
+        summaries =
+            Dict.update runName (Maybe.map (updateSummary result)) thisModel.summaries
 
-                _ ->
-                    False
+        failed =
+            Dict.get runName summaries
+                |> Maybe.map .failed
+                |> Maybe.withDefault 0
 
         updater status =
             { status
                 | remaining = remaining
-                , failed = status.failed || failed
+                , failed = status.failed || failed > 0
                 , nextStep = nextStep
             }
 
@@ -353,7 +366,7 @@ updateStatus runName thisModel remaining result nextStep =
             Dict.update runName (Maybe.map updater) thisModel.statuses
 
         newModel =
-            { thisModel | statuses = newStatuses }
+            { thisModel | statuses = newStatuses, summaries = summaries }
     in
         ( newModel, emitStatusUpdate (Dict.toList newStatuses) )
 
@@ -361,57 +374,67 @@ updateStatus runName thisModel remaining result nextStep =
 endSummary : String -> Model -> P.Model -> ( Model, Cmd Msg )
 endSummary runName thisModel subModel =
     let
-        newSummary =
-            collectLog subModel
+        runSummary =
+            Dict.get runName thisModel.summaries
+                |> Maybe.withDefault newSummary
 
         summary =
             thisModel.summary
 
         updatedSummary =
             { summary
-                | passed = summary.passed + newSummary.passed
-                , failed = summary.failed + newSummary.failed
+                | passed = summary.passed + runSummary.passed
+                , failed = summary.failed + runSummary.failed
             }
 
         remainingSessions =
             Dict.remove runName thisModel.sessions
 
+        remainingSummaries =
+            Dict.remove runName thisModel.summaries
+
         newModel =
-            { thisModel | sessions = remainingSessions, summary = updatedSummary }
+            { thisModel
+                | sessions = remainingSessions
+                , summary = updatedSummary
+                , summaries = remainingSummaries
+            }
 
-        command =
+        signalStop =
             Time.now
-                |> Task.map (StopRun runName newSummary)
+                |> Task.map (StopRun runName runSummary)
                 |> Task.perform never identity
+
+        persistScreenshots =
+            emitScreenshots ( runName, runSummary.screenshots )
     in
-        ( newModel, command )
+        ( newModel, Cmd.batch [ signalStop, persistScreenshots ] )
 
 
-collectLog : P.Model -> Summary
-collectLog ( _, expectations, _ ) =
-    expectations
-        |> List.filterMap identity
-        |> List.reverse
-        |> toOutput { output = "", passed = 0, failed = 0, screenshots = [] } []
+updateSummary : StepResult -> Summary -> Summary
+updateSummary (StepResult description { expectation, screenshot }) summary =
+    case ( expectation, screenshot ) of
+        ( Just ex, Nothing ) ->
+            fromResult description ex [] summary
+
+        ( Just ex, Just s ) ->
+            fromResult description ex [ s ] summary
+
+        ( Nothing, Just s ) ->
+            { summary | screenshots = List.append summary.screenshots [ s ] }
+
+        _ ->
+            summary
 
 
-toOutput : Summary -> List (Maybe String) -> List StepResult -> Summary
-toOutput summary screenshots expectations =
-    case expectations of
-        (StepResult desc screenshot x) :: xs ->
-            toOutput (fromExpectation desc x summary) (screenshot :: screenshots) xs
-
-        [] ->
-            { summary | output = summary.output ++ "\n\n", screenshots = List.filterMap identity screenshots }
-
-
-fromExpectation : String -> Expectation -> Summary -> Summary
-fromExpectation description expectation summary =
+fromResult : String -> Expectation -> List String -> Summary -> Summary
+fromResult description expectation screenshots summary =
     case Expect.getFailure expectation of
         Nothing ->
             { summary
                 | output = summary.output ++ "✅  " ++ description ++ "\n"
                 , passed = summary.passed + 1
+                , screenshots = List.append summary.screenshots screenshots
             }
 
         Just { given, message } ->
@@ -428,10 +451,10 @@ fromExpectation description expectation summary =
                 newOutput =
                     (prefix ++ indentLines message) ++ "\n"
             in
-                { output = summary.output ++ newOutput
-                , failed = summary.failed + 1
-                , passed = summary.passed
-                , screenshots = summary.screenshots
+                { summary
+                    | output = summary.output ++ newOutput
+                    , failed = summary.failed + 1
+                    , screenshots = List.append summary.screenshots screenshots
                 }
 
 
@@ -480,6 +503,9 @@ never a =
 
 
 port emitStatus : List ( String, RunStatus ) -> Cmd msg
+
+
+port emitScreenshots : ( String, List String ) -> Cmd msg
 
 
 port emitStatusUpdate : List ( String, RunStatus ) -> Cmd msg

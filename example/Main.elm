@@ -32,7 +32,7 @@ searchElm =
         , setValue "input[name='q']" "Elm lang"
         , elementText firstLink' <| Expect.equal "Elm is the best"
         , click firstLink'
-        , pause 1000
+        , pause 1000 |> withScreenshot True
         , title <| Expect.equal "home"
         ]
 

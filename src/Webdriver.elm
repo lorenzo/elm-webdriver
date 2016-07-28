@@ -4,6 +4,7 @@ module Webdriver
         , Options
         , stepName
         , withName
+        , withScreenshot
         , basicOptions
         , visit
         , click
@@ -44,7 +45,7 @@ module Webdriver
 
 {-| A library to interface with Webdriver.io and produce commands
 
-@docs basicOptions, Options, Step, stepName, withName
+@docs basicOptions, Options, Step, stepName, withName, withScreenshot
 
 ## Basic Control
 
@@ -132,6 +133,17 @@ withName =
     Webdriver.Step.withName
 
 
+{-| Toggles the automatic screenshot capturing after executing the step.
+By default no screenshots are taken.
+
+    click ".login"
+        |> withScreenshot True
+-}
+withScreenshot : Bool -> Step -> Step
+withScreenshot =
+    Webdriver.Step.withScreenshot
+
+
 {-| Bare minimum options for running selenium
 -}
 basicOptions : Options
@@ -142,12 +154,17 @@ basicOptions =
     }
 
 
+toUnitStep : String -> UnitStep -> Step
+toUnitStep name =
+    ReturningUnit (initMeta name)
+
+
 {-| Visit a url
 -}
 visit : String -> Step
 visit url =
     Visit url
-        |> ReturningUnit ("Visit " ++ url)
+        |> toUnitStep ("Visit " ++ url)
 
 
 {-| Click on an element using a selector
@@ -155,7 +172,7 @@ visit url =
 click : String -> Step
 click selector =
     Click selector
-        |> ReturningUnit ("Click <" ++ selector ++ ">")
+        |> toUnitStep ("Click <" ++ selector ++ ">")
 
 
 {-| Moves the mouse to the middle of the specified element
@@ -163,7 +180,7 @@ click selector =
 moveTo : String -> Step
 moveTo selector =
     MoveTo selector
-        |> ReturningUnit ("Move the mouse to <" ++ selector ++ ">")
+        |> toUnitStep ("Move the mouse to <" ++ selector ++ ">")
 
 
 {-| Moves the mouse to the middle of the specified element. This function
@@ -175,7 +192,7 @@ If offsetY has a value, move relative to the top-left corner of the element on t
 moveToWithOffset : String -> Int -> Int -> Step
 moveToWithOffset selector xOffset yOffset =
     MoveToWithOffset selector xOffset yOffset
-        |> ReturningUnit
+        |> toUnitStep
             ("Move the mouse to <"
                 ++ selector
                 ++ "> with offset ("
@@ -191,7 +208,7 @@ moveToWithOffset selector xOffset yOffset =
 close : Step
 close =
     Close
-        |> ReturningUnit "Close the window"
+        |> toUnitStep "Close the window"
 
 
 {-| Fills in the specified input with the given value
@@ -201,7 +218,7 @@ close =
 setValue : String -> String -> Step
 setValue selector value =
     SetValue selector value
-        |> ReturningUnit ("Set the value '" ++ value ++ "' to <" ++ selector ++ ">")
+        |> toUnitStep ("Set the value '" ++ value ++ "' to <" ++ selector ++ ">")
 
 
 {-| Appends the given string to the specified input's current value
@@ -212,7 +229,7 @@ setValue selector value =
 appendValue : String -> String -> Step
 appendValue selector value =
     AppendValue selector value
-        |> ReturningUnit ("Append the value '" ++ value ++ "' to <" ++ selector ++ ">")
+        |> toUnitStep ("Append the value '" ++ value ++ "' to <" ++ selector ++ ">")
 
 
 {-| Clears the value of the specified input field
@@ -222,7 +239,7 @@ appendValue selector value =
 clearValue : String -> Step
 clearValue selector =
     ClearValue selector
-        |> ReturningUnit ("Clear the value of <" ++ selector ++ ">")
+        |> toUnitStep ("Clear the value of <" ++ selector ++ ">")
 
 
 {-| Selects the option in the dropdown using the option index
@@ -230,7 +247,7 @@ clearValue selector =
 selectByIndex : String -> Int -> Step
 selectByIndex selector index =
     SelectByIndex selector index
-        |> ReturningUnit ("Select the option with index '" ++ (toString index) ++ "' in <" ++ selector ++ ">")
+        |> toUnitStep ("Select the option with index '" ++ (toString index) ++ "' in <" ++ selector ++ ">")
 
 
 {-| Selects the option in the dropdown using the option value
@@ -238,7 +255,7 @@ selectByIndex selector index =
 selectByValue : String -> String -> Step
 selectByValue selector value =
     SelectByValue selector value
-        |> ReturningUnit ("Select the option with value '" ++ value ++ "' in <" ++ selector ++ ">")
+        |> toUnitStep ("Select the option with value '" ++ value ++ "' in <" ++ selector ++ ">")
 
 
 {-| Selects the option in the dropdown using the option visible text
@@ -246,7 +263,7 @@ selectByValue selector value =
 selectByText : String -> String -> Step
 selectByText selector text =
     SelectByText selector text
-        |> ReturningUnit ("Select the option with visible text '" ++ text ++ "' in <" ++ selector ++ ">")
+        |> toUnitStep ("Select the option with visible text '" ++ text ++ "' in <" ++ selector ++ ">")
 
 
 {-| Submits the form with the given selector
@@ -254,7 +271,7 @@ selectByText selector text =
 submitForm : String -> Step
 submitForm selector =
     Submit selector
-        |> ReturningUnit ("Submit the form <" ++ selector ++ ">")
+        |> toUnitStep ("Submit the form <" ++ selector ++ ">")
 
 
 {-| Set the value for a cookie
@@ -262,7 +279,7 @@ submitForm selector =
 setCookie : String -> String -> Step
 setCookie name value =
     SetCookie name value
-        |> ReturningUnit ("Set the cookie '" ++ name ++ "' with value '" ++ value ++ "'")
+        |> toUnitStep ("Set the cookie '" ++ name ++ "' with value '" ++ value ++ "'")
 
 
 {-| Deletes a cookie by name
@@ -270,7 +287,7 @@ setCookie name value =
 deleteCookie : String -> Step
 deleteCookie name =
     DeleteCookie name
-        |> ReturningUnit ("Delete the cookie '" ++ name ++ "'")
+        |> toUnitStep ("Delete the cookie '" ++ name ++ "'")
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -279,7 +296,7 @@ deleteCookie name =
 waitForExist : String -> Int -> Step
 waitForExist selector timeout =
     WaitForExist selector timeout
-        |> ReturningUnit ("Wait " ++ (toSeconds timeout) ++ " for <" ++ selector ++ "> to be present")
+        |> toUnitStep ("Wait " ++ (toSeconds timeout) ++ " for <" ++ selector ++ "> to be present")
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -288,7 +305,7 @@ waitForExist selector timeout =
 waitForNotExist : String -> Int -> Step
 waitForNotExist selector timeout =
     WaitForNotExist selector timeout
-        |> ReturningUnit ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to be absent")
+        |> toUnitStep ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to be absent")
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -297,7 +314,7 @@ waitForNotExist selector timeout =
 waitForVisible : String -> Int -> Step
 waitForVisible selector timeout =
     WaitForVisible selector timeout
-        |> ReturningUnit ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to be visible")
+        |> toUnitStep ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to be visible")
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -306,7 +323,7 @@ waitForVisible selector timeout =
 waitForNotVisible : String -> Int -> Step
 waitForNotVisible selector timeout =
     WaitForNotVisible selector timeout
-        |> ReturningUnit ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to be not visible")
+        |> toUnitStep ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to be not visible")
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -315,7 +332,7 @@ waitForNotVisible selector timeout =
 waitForValue : String -> Int -> Step
 waitForValue selector timeout =
     WaitForValue selector timeout
-        |> ReturningUnit ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to have a value")
+        |> toUnitStep ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to have a value")
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -324,7 +341,7 @@ waitForValue selector timeout =
 waitForNoValue : String -> Int -> Step
 waitForNoValue selector timeout =
     WaitForNoValue selector timeout
-        |> ReturningUnit ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to have no value")
+        |> toUnitStep ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to have no value")
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -333,7 +350,7 @@ waitForNoValue selector timeout =
 waitForSelected : String -> Int -> Step
 waitForSelected selector timeout =
     WaitForSelected selector timeout
-        |> ReturningUnit ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to be selected")
+        |> toUnitStep ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to be selected")
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -342,7 +359,7 @@ waitForSelected selector timeout =
 waitForNotSelected : String -> Int -> Step
 waitForNotSelected selector timeout =
     WaitForNotSelected selector timeout
-        |> ReturningUnit ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to not be selected")
+        |> toUnitStep ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to not be selected")
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -351,7 +368,7 @@ waitForNotSelected selector timeout =
 waitForText : String -> Int -> Step
 waitForText selector timeout =
     WaitForText selector timeout
-        |> ReturningUnit ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to have text")
+        |> toUnitStep ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to have text")
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -360,7 +377,7 @@ waitForText selector timeout =
 waitForNoText : String -> Int -> Step
 waitForNoText selector timeout =
     WaitForNoText selector timeout
-        |> ReturningUnit ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to have no text")
+        |> toUnitStep ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to have no text")
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -369,7 +386,7 @@ waitForNoText selector timeout =
 waitForEnabled : String -> Int -> Step
 waitForEnabled selector timeout =
     WaitForEnabled selector timeout
-        |> ReturningUnit ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to be enabled")
+        |> toUnitStep ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to be enabled")
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
@@ -378,7 +395,7 @@ waitForEnabled selector timeout =
 waitForNotEnabled : String -> Int -> Step
 waitForNotEnabled selector timeout =
     WaitForNotEnabled selector timeout
-        |> ReturningUnit ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to not be enabled")
+        |> toUnitStep ("Wait " ++ (toSeconds timeout) ++ "s for <" ++ selector ++ "> to not be enabled")
 
 
 {-| Ends the browser session
@@ -386,7 +403,7 @@ waitForNotEnabled selector timeout =
 end : Step
 end =
     End
-        |> ReturningUnit "End the session"
+        |> toUnitStep "End the session"
 
 
 {-| Pauses the browser session for the given milliseconds
@@ -394,7 +411,7 @@ end =
 pause : Int -> Step
 pause ms =
     Pause ms
-        |> ReturningUnit ("Pause the exexution for " ++ (toSeconds ms))
+        |> toUnitStep ("Pause the exexution for " ++ (toSeconds ms))
 
 
 {-| Scrolls the window to the element specified in the selector
@@ -402,7 +419,7 @@ pause ms =
 scrollToElement : Selector -> Step
 scrollToElement selector =
     ScrollTo selector 0 0
-        |> ReturningUnit ("Scroll to <" ++ selector ++ ">")
+        |> toUnitStep ("Scroll to <" ++ selector ++ ">")
 
 
 {-| Scrolls the window to the element specified in the selector and then scrolls
@@ -411,7 +428,7 @@ the given amount of pixels as offset from such element
 scrollToElementOffset : Selector -> Int -> Int -> Step
 scrollToElementOffset selector x y =
     ScrollTo selector x y
-        |> ReturningUnit ("Scroll to <" ++ selector ++ "> with offset (" ++ (toString x) ++ "," ++ (toString y) ++ ")")
+        |> toUnitStep ("Scroll to <" ++ selector ++ "> with offset (" ++ (toString x) ++ "," ++ (toString y) ++ ")")
 
 
 {-| Scrolls the window to the absolute coordinate (x, y) position provided in pixels
@@ -419,7 +436,7 @@ scrollToElementOffset selector x y =
 scrollWindow : Int -> Int -> Step
 scrollWindow x y =
     Scroll x y
-        |> ReturningUnit ("Scroll to (" ++ (toString x) ++ "," ++ (toString y) ++ ")")
+        |> toUnitStep ("Scroll to (" ++ (toString x) ++ "," ++ (toString y) ++ ")")
 
 
 {-| Takes a screenshot of the whole page and saves it to a file
@@ -427,7 +444,7 @@ scrollWindow x y =
 savePageScreenshot : String -> Step
 savePageScreenshot filename =
     SavePagecreenshot filename
-        |> ReturningUnit "Save page screenshot"
+        |> toUnitStep "Save page screenshot"
 
 
 {-| Makes any future actions happen inside the frame specified by its index
@@ -435,7 +452,7 @@ savePageScreenshot filename =
 switchToFrame : Int -> Step
 switchToFrame index =
     SwitchFrame index
-        |> ReturningUnit ("Switch to frame <" ++ (toString index) ++ ">")
+        |> toUnitStep ("Switch to frame <" ++ (toString index) ++ ">")
 
 
 {-| Programatically trigger a click in the elements specified in the selector.
@@ -445,7 +462,7 @@ the behavior, it needs to be manually triggered.
 triggerClick : String -> Step
 triggerClick selector =
     TriggerClick selector
-        |> ReturningUnit ("Trigger a JS click for <" ++ selector ++ ">")
+        |> toUnitStep ("Trigger a JS click for <" ++ selector ++ ">")
 
 
 {-| Stops the running queue and gives you time to jump into the browser and
@@ -455,7 +472,7 @@ go to the command line and press Enter.
 waitForDebug : Step
 waitForDebug =
     WaitForDebug
-        |> ReturningUnit "Wait for user to debug in browser"
+        |> toUnitStep "Wait for user to debug in browser"
 
 
 toSeconds : Int -> String

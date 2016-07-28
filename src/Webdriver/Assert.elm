@@ -44,7 +44,7 @@ will automatically fail.
 cookie : String -> (String -> Expectation) -> Step
 cookie name f =
     AssertionMaybe
-        ("Check the cookie <" ++ name ++ "> value")
+        (initMeta <| "Check the cookie <" ++ name ++ "> value")
         (getCookie name)
         (\res ->
             case res of
@@ -63,7 +63,7 @@ cookie name f =
 cookieExists : String -> Step
 cookieExists name =
     AssertionBool
-        ("Check the cookie <" ++ name ++ "> prensence")
+        (initMeta <| "Check the cookie <" ++ name ++ "> prensence")
         (Webdriver.Step.cookieExists name)
         (Expect.true <| "The cookie is not present.")
 
@@ -75,7 +75,7 @@ cookieExists name =
 cookieNotExists : String -> Step
 cookieNotExists name =
     AssertionBool
-        ("Check the cookie <" ++ name ++ "> presence")
+        (initMeta <| "Check the cookie <" ++ name ++ "> presence")
         (Webdriver.Step.cookieNotExists name)
         (Expect.true <| "The cookie was present")
 
@@ -86,7 +86,7 @@ cookieNotExists name =
 -}
 url : (String -> Expectation) -> Step
 url fn =
-    AssertionString "Check the current URL" getUrl fn
+    AssertionString (initMeta "Check the current URL") getUrl fn
 
 
 {-| Asserts the title tag of the current page.
@@ -95,7 +95,7 @@ url fn =
 -}
 title : (String -> Expectation) -> Step
 title fn =
-    AssertionString "Check the page title" getTitle fn
+    AssertionString (initMeta "Check the page title") getTitle fn
 
 
 {-| Asserts the html source of the current page.
@@ -105,7 +105,7 @@ title fn =
 -}
 pageHTML : (String -> Expectation) -> Step
 pageHTML fn =
-    AssertionString "Check the page HTML source" getPageHTML fn
+    AssertionString (initMeta "Check the page HTML source") getPageHTML fn
 
 
 {-| Assets the number of elements matching a selector
@@ -115,7 +115,7 @@ pageHTML fn =
 elementCount : String -> (Int -> Expectation) -> Step
 elementCount selector fn =
     AssertionInt
-        ("Check the number of elements in < " ++ selector ++ " >")
+        (initMeta <| "Check the number of elements in < " ++ selector ++ " >")
         (countElements selector)
         fn
 
@@ -128,7 +128,7 @@ If the attribute is not present in the element, the assertion will automatically
 attribute : String -> String -> (String -> Expectation) -> Step
 attribute selector name fn =
     AssertionMaybe
-        ("Check the <" ++ name ++ "> attribute of the element < " ++ selector ++ " >")
+        (initMeta <| "Check the <" ++ name ++ "> attribute of the element < " ++ selector ++ " >")
         (getAttribute selector name)
         (\res ->
             case res of
@@ -148,7 +148,7 @@ If the attribute is not present in the element, the assertion will automatically
 css : String -> String -> (String -> Expectation) -> Step
 css selector name fn =
     AssertionMaybe
-        ("Check the < " ++ name ++ " > css property of the element < " ++ selector ++ " >")
+        (initMeta <| "Check the < " ++ name ++ " > css property of the element < " ++ selector ++ " >")
         (getCssProperty selector name)
         (\res ->
             case res of
@@ -167,7 +167,7 @@ css selector name fn =
 elementHTML : String -> (String -> Expectation) -> Step
 elementHTML selector fn =
     AssertionString
-        ("Check the HTML for the element < " ++ selector ++ " >")
+        (initMeta <| "Check the HTML for the element < " ++ selector ++ " >")
         (getElementHTML selector)
         fn
 
@@ -179,7 +179,7 @@ elementHTML selector fn =
 elementText : String -> (String -> Expectation) -> Step
 elementText selector fn =
     AssertionString
-        ("Check the text for the element < " ++ selector ++ " >")
+        (initMeta <| "Check the text for the element < " ++ selector ++ " >")
         (getText selector)
         fn
 
@@ -191,7 +191,7 @@ elementText selector fn =
 inputValue : String -> (String -> Expectation) -> Step
 inputValue selector fn =
     AssertionString
-        ("Check the value for the input < " ++ selector ++ " >")
+        (initMeta <| "Check the value for the input < " ++ selector ++ " >")
         (getValue selector)
         fn
 
@@ -203,7 +203,7 @@ inputValue selector fn =
 exists : String -> Step
 exists selector =
     AssertionBool
-        ("Check for the element < " ++ selector ++ " > to exist")
+        (initMeta <| "Check for the element < " ++ selector ++ " > to exist")
         (elementExists selector)
         (\res ->
             if res then
@@ -220,7 +220,7 @@ exists selector =
 inputEnabled : String -> Step
 inputEnabled selector =
     AssertionBool
-        ("Check for the input < " ++ selector ++ " > to be enabled")
+        (initMeta <| "Check for the input < " ++ selector ++ " > to be enabled")
         (elementEnabled selector)
         (\res ->
             if res then
@@ -237,7 +237,7 @@ inputEnabled selector =
 visible : String -> Step
 visible selector =
     AssertionBool
-        ("Check for the element < " ++ selector ++ " > to be visible")
+        (initMeta <| "Check for the element < " ++ selector ++ " > to be visible")
         (elementVisible selector)
         (\res ->
             if res then
@@ -254,7 +254,7 @@ visible selector =
 visibleWithinViewport : String -> Step
 visibleWithinViewport selector =
     AssertionBool
-        ("Check for the element < " ++ selector ++ " > to be visible within the viewport")
+        (initMeta <| "Check for the element < " ++ selector ++ " > to be visible within the viewport")
         (elementVisibleWithinViewport selector)
         (\res ->
             if res then
@@ -271,7 +271,7 @@ visibleWithinViewport selector =
 optionSelected : String -> Step
 optionSelected selector =
     AssertionBool
-        ("Check for the option < " ++ selector ++ " > to be selected")
+        (initMeta <| "Check for the option < " ++ selector ++ " > to be selected")
         (optionIsSelected selector)
         (\res ->
             if res then
@@ -288,7 +288,7 @@ optionSelected selector =
 elementSize : String -> (( Int, Int ) -> Expectation) -> Step
 elementSize selector fn =
     AssertionGeometry
-        ("Check the size of the element < " ++ selector ++ " >")
+        (initMeta <| "Check the size of the element < " ++ selector ++ " >")
         (getElementSize selector)
         fn
 
@@ -300,7 +300,7 @@ elementSize selector fn =
 elementPosition : String -> (( Int, Int ) -> Expectation) -> Step
 elementPosition selector fn =
     AssertionGeometry
-        ("Check the position of the element < " ++ selector ++ " >")
+        (initMeta <| "Check the position of the element < " ++ selector ++ " >")
         (getElementPosition selector)
         fn
 
@@ -313,7 +313,7 @@ Only one element may be matched by the selector.
 elementViewPosition : String -> (( Int, Int ) -> Expectation) -> Step
 elementViewPosition selector fn =
     AssertionGeometry
-        ("Check the position of the element < " ++ selector ++ " > relative to the viewport")
+        (initMeta <| "Check the position of the element < " ++ selector ++ " > relative to the viewport")
         (getElementViewPosition selector)
         fn
 
@@ -324,7 +324,7 @@ elementViewPosition selector fn =
 -}
 task : String -> Task Never Expectation -> Step
 task name theTask =
-    AssertionTask name theTask
+    AssertionTask (initMeta name) theTask
 
 
 {-| Asserts the result of executing a LowLevel Webdriver task. This allows you to create
@@ -342,7 +342,7 @@ driverCommand name partiallyAppliedTask assert =
             partiallyAppliedTask browser
                 |> Task.map assert
     in
-        AssertionWebdriver name task
+        AssertionWebdriver (initMeta name) task
 
 
 {-| Asserts the result of executing a list of LowLevel Webdriver task. This allows you to create
@@ -362,4 +362,4 @@ sequenceCommands name partiallyAppliedTasks assert =
                 |> Task.sequence
                 |> Task.map assert
     in
-        AssertionWebdriver name task
+        AssertionWebdriver (initMeta name) task

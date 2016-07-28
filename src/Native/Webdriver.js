@@ -207,7 +207,9 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
 
   function pageScreenshot(client) {
     return nativeBinding(function (c) {
-      arity1ReturningExecute(c, client.saveScreenshot(), {});
+      arity1ReturningExecute(c, client.saveScreenshot().then(function (screenshot) {
+        return screenshot.value;
+      }), {});
     });
   }
 
@@ -219,7 +221,9 @@ var _lorenzo$webdriver$Native_Webdriver = function() {
 
   function viewportScreenshot(client) {
     return nativeBinding(function (c) {
-      arity1ReturningExecute(c, client.screenshot(), {});
+      arity1ReturningExecute(c, client.screenshot().then(function (screenshot) {
+        return screenshot.value;
+      }), {});
     });
   }
 

@@ -163,6 +163,7 @@ type Error
     | FailedElementPrecondition (ErrorDetails (WithSelector {}))
     | UnknownError (ErrorDetails (WithScreenshot {}))
     | InvalidCommand (ErrorDetails {})
+    | Never
 
 
 type alias WithScreenshot a =

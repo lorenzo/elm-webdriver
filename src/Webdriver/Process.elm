@@ -21,8 +21,8 @@ import Expect exposing (fail)
 type Msg
     = Start Options
     | Initiated Wd.Browser
-    | Process (Maybe StepResult)
-    | ProcessBranch (List Step)
+    | Process StepResult
+    | ProcessBranch StepResult (List Step)
     | OnError String Wd.Error (Maybe Screenshot)
     | Finish
 
@@ -31,7 +31,7 @@ type Msg
 -}
 type OutMsg
     = Spawned
-    | Progress Int (Maybe StepResult) String
+    | Progress Int StepResult String
     | Finalized
     | None
 
@@ -60,23 +60,29 @@ type alias Screenshot =
     String
 
 
+type alias Meta =
+    { name : String
+    , withScreenshot : Bool
+    }
+
+
 {-| The result of running a test step
 -}
 type StepResult
-    = StepResult String (Maybe Screenshot) Expectation
+    = StepResult String { expectation : Maybe Expectation, screenshot : Maybe Screenshot }
 
 
 {-| The model used by this module to represent its state
 -}
 type alias Model =
-    ( Maybe Wd.Browser, List (Maybe StepResult), List Step )
+    ( Maybe Wd.Browser, List Step )
 
 
 {-| Initializes a model with the give list of steps to perform
 -}
 init : List (Step) -> Model
 init actions =
-    ( Nothing, [], actions )
+    ( Nothing, actions )
 
 
 {-| Opens a new Browser window.
@@ -95,63 +101,64 @@ update msg model =
         ( _, Start options ) ->
             ( model, startSession options, None )
 
-        ( ( _, exs, actions ), Initiated browser ) ->
+        ( ( _, actions ), Initiated browser ) ->
             let
                 newModel =
-                    ( Just browser, exs, actions )
+                    ( Just browser, actions )
 
                 command =
-                    Task.succeed (Process Nothing)
-                        |> Task.perform identity identity
+                    Task.succeed (StepResult "Begin session" { expectation = Nothing, screenshot = Nothing })
+                        |> Task.perform identity Process
             in
                 ( newModel, command, Spawned )
 
-        ( ( Just browser, exs, (ReturningUnit name End) :: rest ), Process previousExpect ) ->
-            ( ( Nothing, previousExpect :: exs, [] ), finishSession browser, Progress 0 previousExpect name )
+        ( ( Just browser, (ReturningUnit meta End) :: rest ), Process previousStep ) ->
+            ( ( Nothing, [] ), finishSession browser, Progress 0 previousStep meta.name )
 
         -- Automatically ending the session on last step
-        ( ( Just browser, exs, [] ), Process previousExpect ) ->
-            ( ( Nothing, previousExpect :: exs, [] ), finishSession browser, Progress 0 previousExpect "End Session" )
+        ( ( Just browser, [] ), Process previousStep ) ->
+            ( ( Nothing, [] ), finishSession browser, Progress 0 previousStep "End Session" )
 
-        ( ( Just browser, exs, action :: rest ), Process previousExpect ) ->
+        ( ( Just browser, action :: rest ), Process previousStep ) ->
             let
                 outMsg =
-                    Progress (List.length rest) previousExpect (stepName action)
+                    Progress (List.length rest) previousStep (stepName action)
 
                 newModel =
-                    ( Just browser, previousExpect :: exs, rest )
+                    ( Just browser, rest )
             in
                 ( newModel, process action browser, outMsg )
 
-        ( ( Just browser, exs, actions ), OnError actionDesc error screenshot ) ->
+        ( ( Just browser, actions ), OnError actionDesc error screenshot ) ->
             let
                 message =
-                    fail (errorMessage error)
-                        |> StepResult actionDesc screenshot
+                    StepResult actionDesc
+                        { expectation = Just (fail (errorMessage error))
+                        , screenshot = screenshot
+                        }
 
                 newMessage =
-                    Just message
-                        |> Process
+                    Process message
             in
                 -- Stop processing actions. The browser state is not reliable
-                update newMessage ( Just browser, exs, [] )
+                update newMessage ( Just browser, [] )
 
         -- We need to process the branch actions and the continue with the rest of the process
-        ( ( Just browser, exs, actions ), ProcessBranch (action :: rest) ) ->
+        ( ( Just browser, actions ), ProcessBranch previousStep (action :: rest) ) ->
             let
                 newSteps =
                     List.append rest actions
 
                 outMsg =
-                    Progress (List.length newSteps) Nothing (stepName action)
+                    Progress (List.length newSteps) previousStep (stepName action)
 
                 newModel =
-                    ( Just browser, exs, newSteps )
+                    ( Just browser, newSteps )
             in
                 ( newModel, process action browser, outMsg )
 
-        ( ( _, exs, actions ), Finish ) ->
-            ( ( Nothing, exs, [] ), Cmd.none, Finalized )
+        ( ( _, actions ), Finish ) ->
+            ( ( Nothing, [] ), Cmd.none, Finalized )
 
         ( _, _ ) ->
             ( model, Cmd.none, None )
@@ -181,6 +188,9 @@ errorMessage error =
         Wd.InvalidCommand { message } ->
             message
 
+        Wd.Never ->
+            ""
+
 
 startSession : Options -> Cmd Msg
 startSession options =
@@ -201,6 +211,11 @@ finishSession browser =
 (&>) : Task x y -> Task x z -> Task x z
 (&>) t1 t2 =
     t1 `Task.andThen` \_ -> t2
+
+
+(#>) : Task x y -> Task x z -> Task x ( y, z )
+(#>) t1 t2 =
+    Task.map2 (,) t1 t2
 
 
 autoWait : Selector -> Wd.Browser -> Task Wd.Error ()
@@ -237,12 +252,25 @@ validateSelector selector browser =
             )
 
 
-convertAssertion : Wd.Browser -> String -> (a -> Expectation) -> Task Wd.Error a -> Cmd Msg
-convertAssertion browser description assert task =
-    task
-        |> Task.map (assert >> StepResult description Nothing >> Just)
-        |> screenshotOnError browser description
-        |> Task.perform identity Process
+autoScreenshot : Wd.Browser -> Meta -> (a -> Maybe Expectation) -> Task Wd.Error a -> Task Wd.Error ( a, StepResult )
+autoScreenshot browser meta toExpectation task =
+    if meta.withScreenshot then
+        task
+            #> Wd.viewportScreenshot browser
+            |> Task.map
+                (\( res, screenshot ) ->
+                    ( res
+                    , StepResult meta.name { expectation = toExpectation res, screenshot = Just screenshot }
+                    )
+                )
+    else
+        task
+            |> Task.map
+                (\res ->
+                    ( res
+                    , StepResult meta.name { expectation = toExpectation res, screenshot = Nothing }
+                    )
+                )
 
 
 screenshotOnError : Wd.Browser -> String -> Task Wd.Error a -> Task Msg a
@@ -254,6 +282,15 @@ screenshotOnError browser desc task =
                     `Task.onError` (\error -> Task.fail (OnError desc error Nothing))
                     `Task.andThen` (\screenshot -> Task.fail (OnError desc error (Just screenshot)))
             )
+
+
+convertAssertion : Wd.Browser -> Meta -> (a -> Expectation) -> Task Wd.Error a -> Cmd Msg
+convertAssertion browser meta assert task =
+    task
+        |> autoScreenshot browser meta (assert >> Just)
+        |> screenshotOnError browser meta.name
+        |> Task.map snd
+        |> Task.perform identity Process
 
 
 process : Step -> Wd.Browser -> Cmd Msg
@@ -281,71 +318,83 @@ process action browser =
                     processIntStep step browser
                         |> convertAssertion browser desc assert
 
-                AssertionTask desc task ->
+                AssertionTask meta task ->
                     task
-                        |> Task.map (StepResult desc Nothing >> Just)
-                        |> perform (always <| Process Nothing) Process
-
-                AssertionWebdriver desc task ->
-                    task browser
-                        |> Task.map (StepResult desc Nothing >> Just)
-                        |> screenshotOnError browser desc
+                        |> Task.mapError (\_ -> Wd.Never)
+                        |> autoScreenshot browser meta (Just)
+                        |> screenshotOnError browser meta.name
+                        |> Task.map snd
                         |> perform identity Process
 
-                ReturningUnit name step ->
-                    processStep step browser
-                        |> screenshotOnError browser name
-                        |> perform identity (always <| Process Nothing)
-
-                BranchMaybe name step decider ->
-                    processMaybeStep step browser
-                        |> performBranch name browser decider
-
-                BranchString name step decider ->
-                    processStringStep step browser
-                        |> performBranch name browser decider
-
-                BranchBool name step decider ->
-                    processBoolStep step browser
-                        |> performBranch name browser decider
-
-                BranchGeometry name step decider ->
-                    processGeometryStep step browser
-                        |> performBranch name browser decider
-
-                BranchInt name step decider ->
-                    processIntStep step browser
-                        |> performBranch name browser decider
-
-                BranchTask _ task ->
-                    task
-                        |> Task.map (resolveBranch identity)
-                        |> Task.perform never identity
-
-                BranchWebdriver name task ->
+                AssertionWebdriver meta task ->
                     task browser
-                        |> screenshotOnError browser name
-                        |> Task.perform identity ProcessBranch
+                        |> autoScreenshot browser meta Just
+                        |> screenshotOnError browser meta.name
+                        |> Task.map snd
+                        |> perform identity Process
+
+                ReturningUnit meta step ->
+                    processStep step browser
+                        |> autoScreenshot browser meta (always Nothing)
+                        |> screenshotOnError browser meta.name
+                        |> Task.map snd
+                        |> perform identity Process
+
+                BranchMaybe meta step decider ->
+                    processMaybeStep step browser
+                        |> performBranch meta browser decider
+
+                BranchString meta step decider ->
+                    processStringStep step browser
+                        |> performBranch meta browser decider
+
+                BranchBool meta step decider ->
+                    processBoolStep step browser
+                        |> performBranch meta browser decider
+
+                BranchGeometry meta step decider ->
+                    processGeometryStep step browser
+                        |> performBranch meta browser decider
+
+                BranchInt meta step decider ->
+                    processIntStep step browser
+                        |> performBranch meta browser decider
+
+                BranchTask meta task ->
+                    task
+                        |> Task.mapError (\_ -> Wd.Never)
+                        |> autoScreenshot browser meta (always Nothing)
+                        |> screenshotOnError browser meta.name
+                        |> Task.map (resolveBranch identity)
+                        |> Task.perform identity identity
+
+                BranchWebdriver meta task ->
+                    task browser
+                        |> autoScreenshot browser meta (always Nothing)
+                        |> screenshotOnError browser meta.name
+                        |> Task.map (resolveBranch identity)
+                        |> Task.perform identity identity
     in
         command
 
 
-performBranch : String -> Wd.Browser -> (a -> List Step) -> Task Error a -> Cmd Msg
-performBranch name browser decider task =
+performBranch : Meta -> Wd.Browser -> (a -> List Step) -> Task Error a -> Cmd Msg
+performBranch meta browser decider task =
     task
-        |> screenshotOnError browser name
+        |> autoScreenshot browser meta (always Nothing)
+        |> screenshotOnError browser meta.name
         |> Task.map (resolveBranch decider)
         |> Task.perform identity identity
 
 
-resolveBranch : (a -> List Step) -> a -> Msg
-resolveBranch decider value =
+resolveBranch : (a -> List Step) -> ( a, StepResult ) -> Msg
+resolveBranch decider ( value, stepResult ) =
     case decider value of
         [] ->
-            Process Nothing
+            Process stepResult
 
         list ->
-            ProcessBranch list
+            ProcessBranch stepResult list
 
 
 processStringStep : StringStep -> Wd.Browser -> Task Error String

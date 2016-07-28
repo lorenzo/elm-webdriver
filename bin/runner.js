@@ -1,6 +1,10 @@
 var cl = require('chalkline');
 var chalk = require('chalk');
 var ProgressBar = require('ascii-progress');
+var fs = require('fs');
+var sanitize = require('sanitize-filename');
+var path = require('path');
+var mkdirp = require('mkdirp');
 
 if (process.argv.length < 3) {
   throw 'A path to an Elm-compiled file is required';
@@ -101,3 +105,17 @@ function printSummary(summary) {
 
   console.log(summary.output);
 }
+
+main.ports.emitScreenshots.subscribe(function (data) {
+  if (data[1].length === 0) {
+    return;
+  }
+
+  var name = sanitize(data[0]);
+  var dir = path.join("screenshots", name);
+  mkdirp.sync(dir);
+
+  data[1].forEach(function (s, i) {
+    fs.writeFileSync(path.join(dir, i + ".png"), new Buffer(s, 'base64'));
+  });
+});
