@@ -16,7 +16,7 @@ state of the browser.
 @docs ifAttribute, ifCss, ifElementHTML, ifText, ifValue, ifExists, ifNotExist
 @docs ifEnabled, ifNotEnabled, ifVisible, ifNotVisible, ifVisibleWithinViewport, ifNotVisibleWithinViewport, ifOptionIsSelected, ifNotOptionIsSelected
 @docs ifElementSize, ifElementPosition, ifElementViewPosition
-@docs ifTask, ifDriverCommand
+@docs ifTask, ifDriverCommand, ifSequenceCommands
 
 -}
 
@@ -336,3 +336,22 @@ ifDriverCommand partiallyAppliedTask f =
                 |> Task.map f
     in
         BranchWebdriver (initMeta "Preform a custom webdriver command and execute task") task
+
+
+{-| Executes the list of steps that result of executing a list of LowLevel Webdriver task. This allows you to create custom sequences of tasks to be executed directly in the webdriver, maybe after getting
+values from other tasks.
+
+    ifSequenceCommands "Custom cookie check"
+        [Wd.getCookie "user", Wd.getCookie "legacy_user"]
+        (\ (c :: lc :: []) -> [ setValue "#someInput" c, setValue "#anotherInput" lc ] )
+-}
+ifSequenceCommands : String -> List (Wd.Browser -> Task Wd.Error a) -> (List a -> List Step) -> Step
+ifSequenceCommands name partiallyAppliedTasks converter =
+    let
+        task browser =
+            partiallyAppliedTasks
+                |> List.map (\t -> t browser)
+                |> Task.sequence
+                |> Task.map converter
+    in
+        BranchWebdriver (initMeta name) task
