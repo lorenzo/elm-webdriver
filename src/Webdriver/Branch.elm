@@ -3,6 +3,8 @@ module Webdriver.Branch exposing (..)
 {-| Enables you to conditionally execute a list of steps depending on the current
 state of the browser.
 
+You can use this module to create logic branches and loops in the execution of your run.
+
 ## Cookies
 
 @docs ifCookie, ifCookieExists, ifCookieNotExists
@@ -13,9 +15,18 @@ state of the browser.
 
 ## Element properties
 
-@docs ifAttribute, ifCss, ifElementHTML, ifText, ifValue, ifExists, ifNotExist
-@docs ifEnabled, ifNotEnabled, ifVisible, ifNotVisible, ifVisibleWithinViewport, ifNotVisibleWithinViewport, ifOptionIsSelected, ifNotOptionIsSelected
-@docs ifElementSize, ifElementPosition, ifElementViewPosition
+@docs ifAttribute, ifCss, ifElementHTML, ifText,  ifExists, ifNotExist, ifVisible, ifNotVisible
+
+## Element Dimensions and Position
+
+@docs ifElementSize, ifElementPosition, ifElementViewPosition, ifVisibleWithinViewport, ifNotVisibleWithinViewport
+
+## Form Element Properties
+
+@docs ifValue, ifEnabled, ifNotEnabled, ifOptionIsSelected, ifNotOptionIsSelected
+
+## Custom branch logic
+
 @docs ifTask, ifDriverCommand, ifSequenceCommands
 
 -}

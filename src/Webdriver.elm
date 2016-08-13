@@ -43,33 +43,31 @@ module Webdriver
         , triggerClick
         )
 
-{-| A library to interface with Webdriver.io and produce commands
+{-| A library to interface with Webdriver.io and produce commands to control a browser
+usin selenium.
 
-@docs basicOptions, Options, Step, stepName, withName, withScreenshot
+The functions exposed in this module are commands that produce no result brack from the
+browser.
 
-## Basic Control
+## Basics
+
+@docs basicOptions, Options, Step, stepName, withName
+
+## Simple Browser Control
 
 @docs visit, click, moveTo, moveToWithOffset, close, end, switchToFrame
 
 ## Forms
 
-@docs setValue, appendValue, clearValue, submitForm
-@docs selectByIndex, selectByValue, selectByText
+@docs setValue, appendValue, clearValue, submitForm, selectByIndex, selectByValue, selectByText
 
-## Waiting
-@docs waitForExist
-    , waitForNotExist
-    , waitForVisible
-    , waitForNotVisible
-    , waitForValue
-    , waitForNoValue
-    , waitForSelected
-    , waitForNotSelected
-    , waitForText
-    , waitForNoText
-    , waitForEnabled
-    , waitForNotEnabled
-    , pause
+## Waiting For Elements
+
+@docs waitForExist, waitForNotExist, waitForVisible, waitForNotVisible, waitForText, waitForNoText, pause
+
+## Waiting For Form Elements
+
+@docs  waitForValue, waitForNoValue, waitForSelected, waitForNotSelected, waitForEnabled, waitForNotEnabled
 
 ## Debugging
 
@@ -77,9 +75,7 @@ module Webdriver
 
 ## Scrolling
 
-@docs scrollToElement
-    , scrollToElementOffset
-    , scrollWindow
+@docs scrollToElement, scrollToElementOffset, scrollWindow
 
 ## Cookies
 
@@ -87,7 +83,7 @@ module Webdriver
 
 ## Screenshots
 
-@docs savePageScreenshot
+@docs savePageScreenshot, withScreenshot
 
 ## Custom
 

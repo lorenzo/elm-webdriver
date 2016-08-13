@@ -78,8 +78,7 @@ module Webdriver.LowLevel
 
 # Forms
 
-@docs selectByIndex, selectByValue, selectByText, setValue, appendValue
-    ,clearValue, submitForm
+@docs selectByIndex, selectByValue, selectByText, setValue, appendValue, clearValue, submitForm
 
 ## History
 
@@ -87,9 +86,7 @@ module Webdriver.LowLevel
 
 ## Waiting
 
-@docs waitForExist, waitForNotExist, waitForVisible, waitForNotVisible
-    , waitForValue, waitForNoValue, waitForSelected, waitForNotSelected
-    , waitForText, waitForNoText, waitForEnabled, waitForNotEnabled, pause
+@docs waitForExist, waitForNotExist, waitForVisible, waitForNotVisible, waitForValue, waitForNoValue, waitForSelected, waitForNotSelected, waitForText, waitForNoText, waitForEnabled, waitForNotEnabled, pause
 
 ## Scrolling
 
@@ -113,10 +110,7 @@ module Webdriver.LowLevel
 
 ## Element properties
 
-@docs getAttribute, getCssProperty, getElementSize, getElementHTML
-    , getElementPosition, getElementViewPosition, getText, getValue
-    , elementExists, elementVisible, elementVisibleWithinViewport
-    , elementEnabled, optionIsSelected
+@docs getAttribute, getCssProperty, getElementSize, getElementHTML, getElementPosition, getElementViewPosition, getText, getValue, elementExists, elementVisible, elementVisibleWithinViewport, elementEnabled, optionIsSelected
 
 ## Cokies
 

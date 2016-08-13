@@ -1,7 +1,10 @@
 module Webdriver.Assert exposing (..)
 
-{-| Enables you to conditionally execute a list of steps depending on the current
-state of the browser.
+{-| Allows to run assertions on the current state of the browser session and
+page contents.
+
+Assertions are automatically named out of the type of the operation to perform, but
+can also be given custom names.
 
 ## Types
 
@@ -17,9 +20,18 @@ state of the browser.
 
 ## Element properties
 
-@docs attribute, css, elementHTML, elementText, inputValue, exists
-@docs inputEnabled, visible, visibleWithinViewport, optionSelected
-@docs elementSize, elementPosition, elementViewPosition
+@docs attribute, css, elementHTML, elementText, exists
+
+## Element Dimensions and Position
+
+@docs elementSize, elementPosition, elementViewPosition, visible, visibleWithinViewport
+
+## Form Elements
+
+@docs inputValue, inputEnabled, optionSelected
+
+## Custom Assertions
+
 @docs task, driverCommand, sequenceCommands
 
 -}
@@ -30,7 +42,8 @@ import Expect
 import Task exposing (Task)
 
 
-{-| Alias for the test Expectation type
+{-| An expectation is either a pass or a fail, with a descriptive
+name of the fact that was asserted.
 -}
 type alias Expectation =
     Expect.Expectation

@@ -4,6 +4,8 @@ port module Webdriver.Runner
         , Run
         , Msg(..)
         , Flags
+        , RunStatus
+        , Summary
         , describe
         , group
         , begin
@@ -11,11 +13,13 @@ port module Webdriver.Runner
         )
 
 {-| Allows you to execute a list list of steps or a group of these steps and get a summary
-of each of the runs.
+of each of the runs. This module acts as a test suite runner, but can be resused for any
+other purpose as it will just run each of the steps at a time and report back the status
+using a port and through the Summary type alias.
 
 ## Types
 
-@docs Model, Run, Msg, Flags
+@docs Model, Run, Msg, Flags, RunStatus, Summary
 
 ## Creating runs and groups of runs
 
@@ -54,6 +58,8 @@ type alias Model =
     }
 
 
+{-| Represents the current status of a single run.
+-}
 type alias RunStatus =
     { failed : Bool
     , total : Int
@@ -62,6 +68,8 @@ type alias RunStatus =
     }
 
 
+{-| Represents the final result of a single run or a group of runs.
+-}
 type alias Summary =
     { output : String, passed : Int, failed : Int, screenshots : List String }
 
@@ -79,7 +87,9 @@ type Run
 
 
 {-| Custom options to be set to the runner, such as filtering tests
-by name.
+by name:
+
+    - filter: A string to match against the run name. Only matching runs will execute.
 -}
 type alias Flags =
     { filter : Maybe String
