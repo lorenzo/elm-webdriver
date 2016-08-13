@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
 
+MY_PATH=`readlink -f $0`
+MY_PATH=`dirname "$MY_PATH"`
+TEMPLATES=`dirname "$MY_PATH"`
+TEMPLATES="$TEMPLATES"/templates
+
+if [[ $1 == "init" ]]
+then
+	echo "Copying template files to webdriver-tests"
+	exec cp -a $TEMPLATES ./webdriver-tests
+fi
+
 if [[ $# -gt 0 ]];
 then
 	if [[ $1 == "--"* ]]
@@ -13,13 +24,11 @@ else
 	FILE="Main.elm"
 fi
 
-MY_PATH=`readlink -f $0`
-MY_PATH=`dirname "$MY_PATH"`
 TARGET=__main.js
 TARGET=`readlink -f $TARGET`
 
 compile() {
-	elm-make "$FILE" --output "$1" > /dev/null
+	elm-make --yes "$FILE" --output "$1" > /dev/null
 }
 
 compile "$TARGET" && /usr/bin/env node $MY_PATH/runner.js "$TARGET" $*
