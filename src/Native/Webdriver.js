@@ -1,6 +1,6 @@
 var webdriverio = require('webdriverio');
 
-var _lorenzo$webdriver$Native_Webdriver = function() {
+var _lorenzo$elm_webdriver$Native_Webdriver = function() {
 
   var nativeBinding = _elm_lang$core$Native_Scheduler.nativeBinding;
   var succeed = _elm_lang$core$Native_Scheduler.succeed;
