@@ -125,384 +125,280 @@ of the run with the help of a port.
 
 ---
 
-#Webdriver
+#Webdriver.Branch
 
- A library to interface with Webdriver.io and produce commands to control a browser
-usin selenium.
+ Enables you to conditionally execute a list of steps depending on the current
+state of the browser.
 
-The functions exposed in this module are commands that produce no result brack from the
-browser.
-
-## Basics
-
-```elm
-basicOptions : Webdriver.Options
-```
-
-Bare minimum options for running selenium
-
----
-```elm
-type alias Options = 
-  Webdriver.LowLevel.Options
-```
-
-Driver options
-
----
-```elm
-type alias Step = 
-  Webdriver.Step.Step
-```
-
-The valid actions that can be executed in the browser
-
----
-```elm
-stepName : Webdriver.Step -> String
-```
-
-Returns the human readable name of the step
-
-    stepName (click "a") === "Click on <a>"
-
----
-```elm
-withName : String -> Webdriver.Step -> Webdriver.Step
-```
-
-Gives a new human readable name to an existing step
-
-    click ".login"
-        |> withName "Enter the private zone"
-
----
-
-
-## Simple Browser Control
-
-```elm
-visit : String -> Webdriver.Step
-```
-
-Visit a url
-
----
-```elm
-click : String -> Webdriver.Step
-```
-
-Click on an element using a selector
-
----
-```elm
-moveTo : String -> Webdriver.Step
-```
-
-Moves the mouse to the middle of the specified element
-
----
-```elm
-moveToWithOffset : String
-    -> Int
-    -> Int
-    -> Webdriver.Step
-```
-
-Moves the mouse to the middle of the specified element. This function
-takes two integers (offsetX and offsetY).
-
-If offsetX has a value, move relative to the top-left corner of the element on the X axis
-If offsetY has a value, move relative to the top-left corner of the element on the Y axis
-
----
-```elm
-close : Webdriver.Step
-```
-
-Close the current browser window
-
----
-```elm
-end : Webdriver.Step
-```
-
-Ends the browser session
-
----
-```elm
-switchToFrame : Int -> Webdriver.Step
-```
-
-Makes any future actions happen inside the frame specified by its index
-
----
-
-
-## Forms
-
-```elm
-setValue : String -> String -> Webdriver.Step
-```
-
-Fills in the specified input with the given value
-
-    setValue "#email" "foo@bar.com"
-
----
-```elm
-appendValue : String -> String -> Webdriver.Step
-```
-
-Appends the given string to the specified input's current value
-
-    setValue "#email" "foo"
-    addValue "#email" "@bar.com"
-
----
-```elm
-clearValue : String -> Webdriver.Step
-```
-
-Clears the value of the specified input field
-
-    clearValue "#email"
-
----
-```elm
-submitForm : String -> Webdriver.Step
-```
-
-Submits the form with the given selector
-
----
-```elm
-selectByIndex : String -> Int -> Webdriver.Step
-```
-
-Selects the option in the dropdown using the option index
-
----
-```elm
-selectByValue : String -> String -> Webdriver.Step
-```
-
-Selects the option in the dropdown using the option value
-
----
-```elm
-selectByText : String -> String -> Webdriver.Step
-```
-
-Selects the option in the dropdown using the option visible text
-
----
-
-
-## Waiting For Elements
-
-```elm
-waitForExist : String -> Int -> Webdriver.Step
-```
-
-Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be present within the DOM
-
----
-```elm
-waitForNotExist : String -> Int -> Webdriver.Step
-```
-
-Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be present absent from the DOM
-
----
-```elm
-waitForVisible : String -> Int -> Webdriver.Step
-```
-
-Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be visible.
-
----
-```elm
-waitForNotVisible : String -> Int -> Webdriver.Step
-```
-
-Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be invisible.
-
----
-```elm
-waitForText : String -> Int -> Webdriver.Step
-```
-
-Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be have some text.
-
----
-```elm
-waitForNoText : String -> Int -> Webdriver.Step
-```
-
-Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to have no text.
-
----
-```elm
-pause : Int -> Webdriver.Step
-```
-
-Pauses the browser session for the given milliseconds
-
----
-
-
-## Waiting For Form Elements
-
-```elm
-waitForValue : String -> Int -> Webdriver.Step
-```
-
-Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be have a value.
-
----
-```elm
-waitForNoValue : String -> Int -> Webdriver.Step
-```
-
-Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to have no value.
-
----
-```elm
-waitForSelected : String -> Int -> Webdriver.Step
-```
-
-Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be selected.
-
----
-```elm
-waitForNotSelected : String -> Int -> Webdriver.Step
-```
-
-Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to not be selected.
-
----
-```elm
-waitForEnabled : String -> Int -> Webdriver.Step
-```
-
-Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be enabled.
-
----
-```elm
-waitForNotEnabled : String -> Int -> Webdriver.Step
-```
-
-Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be disabled.
-
----
-
-
-## Debugging
-
-```elm
-waitForDebug : Webdriver.Step
-```
-
-Stops the running queue and gives you time to jump into the browser and
-check the state of your application (e.g. using the dev tools). Once you are done
-go to the command line and press Enter.
-
----
-
-
-## Scrolling
-
-```elm
-scrollToElement : Webdriver.Selector -> Webdriver.Step
-```
-
-Scrolls the window to the element specified in the selector
-
----
-```elm
-scrollToElementOffset : Webdriver.Selector
-    -> Int
-    -> Int
-    -> Webdriver.Step
-```
-
-Scrolls the window to the element specified in the selector and then scrolls
-the given amount of pixels as offset from such element
-
----
-```elm
-scrollWindow : Int -> Int -> Webdriver.Step
-```
-
-Scrolls the window to the absolute coordinate (x, y) position provided in pixels
-
----
-
+You can use this module to create logic branches and loops in the execution of your run.
 
 ## Cookies
 
 ```elm
-setCookie : String -> String -> Webdriver.Step
+ifCookie : String
+    -> (Maybe.Maybe String -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
 ```
 
-Set the value for a cookie
+Executes the list of steps the passed function returns depending
+on the value of the specified cookie
 
 ---
 ```elm
-deleteCookie : String -> Webdriver.Step
+ifCookieExists : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
 ```
 
-Deletes a cookie by name
-
----
-
-
-## Screenshots
-
-```elm
-savePageScreenshot : String -> Webdriver.Step
-```
-
-Takes a screenshot of the whole page and saves it to a file
+Executes the provided list of steps if the specified cookie exists
 
 ---
 ```elm
-withScreenshot : Bool -> Webdriver.Step -> Webdriver.Step
+ifCookieNotExists : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
 ```
 
-Toggles the automatic screenshot capturing after executing the step.
-By default no screenshots are taken.
-
-    click ".login"
-        |> withScreenshot True
+Executes the provided list of steps if the specified cookie does not exist
 
 ---
 
 
-## Custom
+## Page properties
 
 ```elm
-triggerClick : String -> Webdriver.Step
+ifUrl : (String -> List Webdriver.Step.Step) -> Webdriver.Step.Step
 ```
 
-Programatically trigger a click in the elements specified in the selector.
-This exists because some pages hijack in an odd way mouse click, and in order to test
-the behavior, it needs to be manually triggered.
+Executes the list of steps the passed function returns depending
+on the current url
 
 ---
+```elm
+ifPageHTML : (String -> List Webdriver.Step.Step) -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the current page source
+
+---
+```elm
+ifTitle : (String -> List Webdriver.Step.Step) -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the current page title
+
+---
+```elm
+ifElementCount : String
+    -> (Int -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the number of elements returned by the selector
+
+---
+
+
+## Element properties
+
+```elm
+ifAttribute : String
+    -> String
+    -> (Maybe.Maybe String -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the value of the specified attribute in the given element
+
+---
+```elm
+ifCss : String
+    -> String
+    -> (Maybe.Maybe String -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the value of the specified css attribute in the given element
+
+---
+```elm
+ifElementHTML : String
+    -> (String -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the value of the HTMl for the given element
+
+---
+```elm
+ifText : String
+    -> (String -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the value of the text node of the given element
+
+---
+```elm
+ifExists : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the specified element exists in the DOM
+
+---
+```elm
+ifNotExist : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the specified element does not exist in the DOM
+
+---
+```elm
+ifVisible : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if element is visible
+
+---
+```elm
+ifNotVisible : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if element is not visible
+
+---
+
+
+## Element Dimensions and Position
+
+```elm
+ifElementSize : String
+    -> (( Int, Int ) -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the size (width, height) of the element
+
+---
+```elm
+ifElementPosition : String
+    -> (( Int, Int ) -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the location (x, y) of the element
+
+---
+```elm
+ifElementViewPosition : String
+    -> (( Int, Int ) -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the location (x, y) of the element relative to the current viewport
+
+---
+```elm
+ifVisibleWithinViewport : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the element is visible within the viewport
+
+---
+```elm
+ifNotVisibleWithinViewport : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the element is not visible within the viewport
+
+---
+
+
+## Form Element Properties
+
+```elm
+ifValue : String
+    -> (String -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the value of the specified input field
+
+---
+```elm
+ifEnabled : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the input element is enabled
+
+---
+```elm
+ifNotEnabled : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the input element is not enabled
+
+---
+```elm
+ifOptionIsSelected : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the option in the select box is selected
+
+---
+```elm
+ifNotOptionIsSelected : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the option in the select box is not selected
+
+---
+
+
+## Custom branch logic
+
+```elm
+ifTask : Task.Task Basics.Never (List Webdriver.Step.Step) -> Webdriver.Step.Step
+```
+
+Executes the list of steps returned as the result of performing a Task
+
+---
+```elm
+ifDriverCommand : (Webdriver.LowLevel.Browser -> Task.Task Webdriver.LowLevel.Error a)
+    -> (a -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps resulting of executing a LowLevel Webdriver task. This allows you to create
+custom sequences of tasks to be executed directly in the webdriver, maybe after getting
+values from other tasks.
+
+---
+```elm
+ifSequenceCommands : String
+    -> List (Webdriver.LowLevel.Browser
+    -> Task.Task Webdriver.LowLevel.Error a)
+    -> (List a -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps that result of executing a list of LowLevel Webdriver task. This allows you to create custom sequences of tasks to be executed directly in the webdriver, maybe after getting
+values from other tasks.
+
+    ifSequenceCommands "Custom cookie check"
+        [Wd.getCookie "user", Wd.getCookie "legacy_user"]
+        (\ (c :: lc :: []) -> [ setValue "#someInput" c, setValue "#anotherInput" lc ] )
+
+---
+
 
 
 
@@ -806,280 +702,404 @@ values from other tasks.
 
 ---
 
-#Webdriver.Branch
+#Webdriver
 
- Enables you to conditionally execute a list of steps depending on the current
-state of the browser.
+ A library to interface with Webdriver.io and produce commands to control a browser
+usin selenium.
 
-You can use this module to create logic branches and loops in the execution of your run.
+The functions exposed in this module are commands that produce no result brack from the
+browser.
+
+## Basics
+
+```elm
+basicOptions : Webdriver.Options
+```
+
+Bare minimum options for running selenium
+
+---
+```elm
+type alias Options = 
+  Webdriver.LowLevel.Options
+```
+
+Driver options
+
+---
+```elm
+type alias Step = 
+  Webdriver.Step.Step
+```
+
+The valid actions that can be executed in the browser
+
+---
+```elm
+stepName : Webdriver.Step -> String
+```
+
+Returns the human readable name of the step
+
+    stepName (click "a") === "Click on <a>"
+
+---
+```elm
+withName : String -> Webdriver.Step -> Webdriver.Step
+```
+
+Gives a new human readable name to an existing step
+
+    click ".login"
+        |> withName "Enter the private zone"
+
+---
+
+
+## Simple Browser Control
+
+```elm
+visit : String -> Webdriver.Step
+```
+
+Visit a url
+
+---
+```elm
+click : String -> Webdriver.Step
+```
+
+Click on an element using a selector
+
+---
+```elm
+moveTo : String -> Webdriver.Step
+```
+
+Moves the mouse to the middle of the specified element
+
+---
+```elm
+moveToWithOffset : String
+    -> Int
+    -> Int
+    -> Webdriver.Step
+```
+
+Moves the mouse to the middle of the specified element. This function
+takes two integers (offsetX and offsetY).
+
+If offsetX has a value, move relative to the top-left corner of the element on the X axis
+If offsetY has a value, move relative to the top-left corner of the element on the Y axis
+
+---
+```elm
+close : Webdriver.Step
+```
+
+Close the current browser window
+
+---
+```elm
+end : Webdriver.Step
+```
+
+Ends the browser session
+
+---
+```elm
+switchToFrame : Int -> Webdriver.Step
+```
+
+Makes any future actions happen inside the frame specified by its index
+
+---
+
+
+## Forms
+
+```elm
+setValue : String -> String -> Webdriver.Step
+```
+
+Fills in the specified input with the given value
+
+    setValue "#email" "foo@bar.com"
+
+---
+```elm
+appendValue : String -> String -> Webdriver.Step
+```
+
+Appends the given string to the specified input's current value
+
+    setValue "#email" "foo"
+    addValue "#email" "@bar.com"
+
+---
+```elm
+clearValue : String -> Webdriver.Step
+```
+
+Clears the value of the specified input field
+
+    clearValue "#email"
+
+---
+```elm
+submitForm : String -> Webdriver.Step
+```
+
+Submits the form with the given selector
+
+---
+```elm
+selectByIndex : String -> Int -> Webdriver.Step
+```
+
+Selects the option in the dropdown using the option index
+
+---
+```elm
+selectByValue : String -> String -> Webdriver.Step
+```
+
+Selects the option in the dropdown using the option value
+
+---
+```elm
+selectByText : String -> String -> Webdriver.Step
+```
+
+Selects the option in the dropdown using the option visible text
+
+---
+```elm
+selectByAttribute : String
+    -> String
+    -> String
+    -> Webdriver.Step
+```
+
+Selects the option in the dropdown using the value of the given attribute for the option node.
+For example, give the folowing HTML
+
+    <select id="mySelect">
+        <option name="someName1">Text 1</option>
+        <option name="someName2">Text 2</option>
+    </select>
+
+The following code will match the first option:
+
+    selectByAttribute "#mySelect" "name" "someName1"
+
+---
+
+
+## Waiting For Elements
+
+```elm
+waitForExist : String -> Int -> Webdriver.Step
+```
+
+Wait for an element (selected by css selector) for the provided amount of
+    milliseconds to be present within the DOM
+
+---
+```elm
+waitForNotExist : String -> Int -> Webdriver.Step
+```
+
+Wait for an element (selected by css selector) for the provided amount of
+    milliseconds to be present absent from the DOM
+
+---
+```elm
+waitForVisible : String -> Int -> Webdriver.Step
+```
+
+Wait for an element (selected by css selector) for the provided amount of
+    milliseconds to be visible.
+
+---
+```elm
+waitForNotVisible : String -> Int -> Webdriver.Step
+```
+
+Wait for an element (selected by css selector) for the provided amount of
+    milliseconds to be invisible.
+
+---
+```elm
+waitForText : String -> Int -> Webdriver.Step
+```
+
+Wait for an element (selected by css selector) for the provided amount of
+    milliseconds to be have some text.
+
+---
+```elm
+waitForNoText : String -> Int -> Webdriver.Step
+```
+
+Wait for an element (selected by css selector) for the provided amount of
+    milliseconds to have no text.
+
+---
+```elm
+pause : Int -> Webdriver.Step
+```
+
+Pauses the browser session for the given milliseconds
+
+---
+
+
+## Waiting For Form Elements
+
+```elm
+waitForValue : String -> Int -> Webdriver.Step
+```
+
+Wait for an element (selected by css selector) for the provided amount of
+    milliseconds to be have a value.
+
+---
+```elm
+waitForNoValue : String -> Int -> Webdriver.Step
+```
+
+Wait for an element (selected by css selector) for the provided amount of
+    milliseconds to have no value.
+
+---
+```elm
+waitForSelected : String -> Int -> Webdriver.Step
+```
+
+Wait for an element (selected by css selector) for the provided amount of
+    milliseconds to be selected.
+
+---
+```elm
+waitForNotSelected : String -> Int -> Webdriver.Step
+```
+
+Wait for an element (selected by css selector) for the provided amount of
+    milliseconds to not be selected.
+
+---
+```elm
+waitForEnabled : String -> Int -> Webdriver.Step
+```
+
+Wait for an element (selected by css selector) for the provided amount of
+    milliseconds to be enabled.
+
+---
+```elm
+waitForNotEnabled : String -> Int -> Webdriver.Step
+```
+
+Wait for an element (selected by css selector) for the provided amount of
+    milliseconds to be disabled.
+
+---
+
+
+## Debugging
+
+```elm
+waitForDebug : Webdriver.Step
+```
+
+Stops the running queue and gives you time to jump into the browser and
+check the state of your application (e.g. using the dev tools). Once you are done
+go to the command line and press Enter.
+
+---
+
+
+## Scrolling
+
+```elm
+scrollToElement : Webdriver.Selector -> Webdriver.Step
+```
+
+Scrolls the window to the element specified in the selector
+
+---
+```elm
+scrollToElementOffset : Webdriver.Selector
+    -> Int
+    -> Int
+    -> Webdriver.Step
+```
+
+Scrolls the window to the element specified in the selector and then scrolls
+the given amount of pixels as offset from such element
+
+---
+```elm
+scrollWindow : Int -> Int -> Webdriver.Step
+```
+
+Scrolls the window to the absolute coordinate (x, y) position provided in pixels
+
+---
+
 
 ## Cookies
 
 ```elm
-ifCookie : String
-    -> (Maybe.Maybe String -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
+setCookie : String -> String -> Webdriver.Step
 ```
 
-Executes the list of steps the passed function returns depending
-on the value of the specified cookie
+Set the value for a cookie
 
 ---
 ```elm
-ifCookieExists : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+deleteCookie : String -> Webdriver.Step
 ```
 
-Executes the provided list of steps if the specified cookie exists
+Deletes a cookie by name
+
+---
+
+
+## Screenshots
+
+```elm
+savePageScreenshot : String -> Webdriver.Step
+```
+
+Takes a screenshot of the whole page and saves it to a file
 
 ---
 ```elm
-ifCookieNotExists : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+withScreenshot : Bool -> Webdriver.Step -> Webdriver.Step
 ```
 
-Executes the provided list of steps if the specified cookie does not exist
+Toggles the automatic screenshot capturing after executing the step.
+By default no screenshots are taken.
+
+    click ".login"
+        |> withScreenshot True
 
 ---
 
 
-## Page properties
+## Custom
 
 ```elm
-ifUrl : (String -> List Webdriver.Step.Step) -> Webdriver.Step.Step
+triggerClick : String -> Webdriver.Step
 ```
 
-Executes the list of steps the passed function returns depending
-on the current url
+Programatically trigger a click in the elements specified in the selector.
+This exists because some pages hijack in an odd way mouse click, and in order to test
+the behavior, it needs to be manually triggered.
 
 ---
-```elm
-ifPageHTML : (String -> List Webdriver.Step.Step) -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the current page source
-
----
-```elm
-ifTitle : (String -> List Webdriver.Step.Step) -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the current page title
-
----
-```elm
-ifElementCount : String
-    -> (Int -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the number of elements returned by the selector
-
----
-
-
-## Element properties
-
-```elm
-ifAttribute : String
-    -> String
-    -> (Maybe.Maybe String -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the value of the specified attribute in the given element
-
----
-```elm
-ifCss : String
-    -> String
-    -> (Maybe.Maybe String -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the value of the specified css attribute in the given element
-
----
-```elm
-ifElementHTML : String
-    -> (String -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the value of the HTMl for the given element
-
----
-```elm
-ifText : String
-    -> (String -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the value of the text node of the given element
-
----
-```elm
-ifExists : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the specified element exists in the DOM
-
----
-```elm
-ifNotExist : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the specified element does not exist in the DOM
-
----
-```elm
-ifVisible : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if element is visible
-
----
-```elm
-ifNotVisible : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if element is not visible
-
----
-
-
-## Element Dimensions and Position
-
-```elm
-ifElementSize : String
-    -> (( Int, Int ) -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the size (width, height) of the element
-
----
-```elm
-ifElementPosition : String
-    -> (( Int, Int ) -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the location (x, y) of the element
-
----
-```elm
-ifElementViewPosition : String
-    -> (( Int, Int ) -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the location (x, y) of the element relative to the current viewport
-
----
-```elm
-ifVisibleWithinViewport : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the element is visible within the viewport
-
----
-```elm
-ifNotVisibleWithinViewport : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the element is not visible within the viewport
-
----
-
-
-## Form Element Properties
-
-```elm
-ifValue : String
-    -> (String -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the value of the specified input field
-
----
-```elm
-ifEnabled : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the input element is enabled
-
----
-```elm
-ifNotEnabled : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the input element is not enabled
-
----
-```elm
-ifOptionIsSelected : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the option in the select box is selected
-
----
-```elm
-ifNotOptionIsSelected : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the option in the select box is not selected
-
----
-
-
-## Custom branch logic
-
-```elm
-ifTask : Task.Task Basics.Never (List Webdriver.Step.Step) -> Webdriver.Step.Step
-```
-
-Executes the list of steps returned as the result of performing a Task
-
----
-```elm
-ifDriverCommand : (Webdriver.LowLevel.Browser -> Task.Task Webdriver.LowLevel.Error a)
-    -> (a -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps resulting of executing a LowLevel Webdriver task. This allows you to create
-custom sequences of tasks to be executed directly in the webdriver, maybe after getting
-values from other tasks.
-
----
-```elm
-ifSequenceCommands : String
-    -> List (Webdriver.LowLevel.Browser
-    -> Task.Task Webdriver.LowLevel.Error a)
-    -> (List a -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps that result of executing a list of LowLevel Webdriver task. This allows you to create custom sequences of tasks to be executed directly in the webdriver, maybe after getting
-values from other tasks.
-
-    ifSequenceCommands "Custom cookie check"
-        [Wd.getCookie "user", Wd.getCookie "legacy_user"]
-        (\ (c :: lc :: []) -> [ setValue "#someInput" c, setValue "#anotherInput" lc ] )
-
----
-
 
 
 
@@ -1230,6 +1250,17 @@ selectByText : String
 ```
 
 Selects the option in the dropdown using the option visible text
+
+---
+```elm
+selectByAttribute : String
+    -> String
+    -> String
+    -> Webdriver.LowLevel.Browser
+    -> Task.Task Webdriver.LowLevel.Error ()
+```
+
+Selects the option in the dropdown using the value of the given attribute for the option node.
 
 ---
 ```elm
@@ -1694,3 +1725,4 @@ Allows you to execute an arbitrary command in the client by a name. The return v
 of the comand coms as a Json.Encode.Value.
 
     customCommand "windowHandleSize" [JE.string "dc30381e-e2f3-9444-8bf3-12cc44e8372a"] browser
+
