@@ -552,6 +552,11 @@ processStep step browser =
                 &> inputAutoWait selector browser
                 &> Wd.selectByText selector text browser
 
+        SelectByAttribute selector attr value ->
+            validateSelector selector browser
+                &> inputAutoWait selector browser
+                &> Wd.selectByAttribute selector attr value browser
+
         Submit selector ->
             validateSelector selector browser
                 &> Wd.submitForm selector browser

@@ -138,6 +138,12 @@ var _lorenzo$elm_webdriver$Native_Webdriver = function() {
     });
   }
 
+  function selectByAttribute(selector, attribute, value, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.selectByAttribute(selector, attribute, value), {selector: selector});
+    });
+  }
+
   function submitForm(selector, client) {
     return nativeBinding(function (c) {
       unitReturningExecute(c, client.submitForm(selector), {selector: selector});
@@ -437,6 +443,7 @@ var _lorenzo$elm_webdriver$Native_Webdriver = function() {
     selectByIndex: F3(selectByIndex),
     selectByValue: F3(selectByValue),
     selectByText: F3(selectByText),
+    selectByAttribute: F4(selectByAttribute),
     submitForm: F2(submitForm),
     setCookie: F3(setCookie),
     deleteCookie: F2(deleteCookie),

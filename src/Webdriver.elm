@@ -18,6 +18,7 @@ module Webdriver
         , selectByIndex
         , selectByValue
         , selectByText
+        , selectByAttribute
         , submitForm
         , waitForExist
         , waitForNotExist
@@ -59,7 +60,7 @@ browser.
 
 ## Forms
 
-@docs setValue, appendValue, clearValue, submitForm, selectByIndex, selectByValue, selectByText
+@docs setValue, appendValue, clearValue, submitForm, selectByIndex, selectByValue, selectByText, selectByAttribute
 
 ## Waiting For Elements
 
@@ -260,6 +261,25 @@ selectByText : String -> String -> Step
 selectByText selector text =
     SelectByText selector text
         |> toUnitStep ("Select the option with visible text '" ++ text ++ "' in <" ++ selector ++ ">")
+
+
+{-| Selects the option in the dropdown using the value of the given attribute for the option node.
+For example, give the folowing HTML
+
+    <select id="mySelect">
+        <option name="someName1">Text 1</option>
+        <option name="someName2">Text 2</option>
+    </select>
+
+The following code will match the first option:
+
+    selectByAttribute "#mySelect" "name" "someName1"
+
+-}
+selectByAttribute : String -> String -> String -> Step
+selectByAttribute selector attr value =
+    SelectByAttribute selector attr value
+        |> toUnitStep ("Select the option with attribute '" ++ attr ++ "=" ++ value ++ "'  in <" ++ selector ++ ">")
 
 
 {-| Submits the form with the given selector

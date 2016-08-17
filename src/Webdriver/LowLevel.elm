@@ -19,6 +19,7 @@ module Webdriver.LowLevel
         , selectByIndex
         , selectByValue
         , selectByText
+        , selectByAttribute
         , submitForm
         , setCookie
         , deleteCookie
@@ -78,7 +79,7 @@ module Webdriver.LowLevel
 
 # Forms
 
-@docs selectByIndex, selectByValue, selectByText, setValue, appendValue, clearValue, submitForm
+@docs selectByIndex, selectByValue, selectByText, selectByAttribute, setValue, appendValue, clearValue, submitForm
 
 ## History
 
@@ -270,6 +271,14 @@ selectByValue =
 selectByText : String -> String -> Browser -> Task Error ()
 selectByText =
     Native.Webdriver.selectByText
+
+
+{-| Selects the option in the dropdown using the value of the given attribute for the option node.
+
+-}
+selectByAttribute : String -> String -> String -> Browser -> Task Error ()
+selectByAttribute =
+    Native.Webdriver.selectByAttribute
 
 
 {-| Submits the form with the given selector

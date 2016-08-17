@@ -87,6 +87,7 @@ type UnitStep
     | SelectByValue Selector String
     | SelectByIndex Selector Int
     | SelectByText Selector String
+    | SelectByAttribute Selector String String
     | SetCookie String String
     | DeleteCookie String
     | Submit Selector
