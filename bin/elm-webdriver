@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-MY_PATH=`readlink -f $0`
-MY_PATH=`dirname "$MY_PATH"`
+MY_PATH="$(cd "$(dirname "$0")" && pwd -P)"
 TEMPLATES=`dirname "$MY_PATH"`
 TEMPLATES="$TEMPLATES"/templates
 
@@ -24,8 +23,7 @@ else
 	FILE="Main.elm"
 fi
 
-TARGET=__main.js
-TARGET=`readlink -f $TARGET`
+TARGET=`pwd`"/__main.js"
 
 compile() {
 	elm-make --yes "$FILE" --output "$1" > /dev/null
