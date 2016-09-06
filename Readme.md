@@ -11,13 +11,13 @@ Since this package contains a `Native` module (some javascript), this cannot be 
 packages.elm-lang.org. Instead, you need to install it using npm. Do this at the root of your
 Elm project, where the `elm-package.json` file is:
 
-```
+```sh
 npm install elm-webdriver
 ```
 
 You are now ready to copy some skeleton tests into your project folder:
 
-```
+```sh
 node_modules/.bin/elm-webdriver init
 ```
 
@@ -27,16 +27,26 @@ and a `Tests.elm` file. You can add your tests to `Tests.elm` without having to 
 If you need to use modules from your project, make sure you also add all the dependencies from the main
 `elm-package.json` into `webdriver-tests/elm-package.json`. Rember to keep those in sync.
 
-You are now ready to run your tests:
+### Install selenium webdriver
 
+The Selenium standalone server is required for running the tests locally. You can download the standalone sever
+from [the official Selenium page](http://www.seleniumhq.org/download/). Once the `.jar` file is downloaded, you
+can run it with the following command:
+
+```sh
+java -jar selenium-server-standalone.jar
 ```
+
+You are now ready to run your tests in another terminal, while the standalone server is still running:
+
+```sh
 cd webdriver-tests
 ../node_modules/.bin/elm-webdriver
 ```
 
 You can also filter tests by name:
 
-```
+```sh
 ../node_modules/.bin/elm-webdriver --filter "Some Test Name"
 ```
 
