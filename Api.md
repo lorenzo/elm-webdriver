@@ -1,7 +1,7 @@
 #Webdriver.Runner
 
  Allows you to execute a list list of steps or a group of these steps and get a summary
-of each of the runs. This module acts as a test suite runner, but can be resused for any
+of each of the runs. This module acts as a test suite runner, but can be reused for any
 other purpose as it will just run each of the steps at a time and report back the status
 using a port and through the Summary type alias.
 
@@ -705,9 +705,9 @@ values from other tasks.
 #Webdriver
 
  A library to interface with Webdriver.io and produce commands to control a browser
-usin selenium.
+using selenium.
 
-The functions exposed in this module are commands that produce no result brack from the
+The functions exposed in this module are commands that produce no result back from the
 browser.
 
 ## Basics
