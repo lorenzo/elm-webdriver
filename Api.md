@@ -705,9 +705,9 @@ values from other tasks.
 #Webdriver
 
  A library to interface with Webdriver.io and produce commands to control a browser
-usin selenium.
+using selenium.
 
-The functions exposed in this module are commands that produce no result brack from the
+The functions exposed in this module are commands that produce no result back from the
 browser.
 
 ## Basics
