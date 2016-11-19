@@ -39,6 +39,7 @@ import Expect
 import String
 import Time exposing (Time)
 import Task
+import Tuple exposing (first, second)
 import Webdriver as W exposing (..)
 import Webdriver.Assert exposing (..)
 import Webdriver.Process as P exposing (Model, OutMsg(..), StepResult(..))
@@ -251,18 +252,18 @@ dispatchTests filterString model =
         nextState =
             model.runs
                 |> flattenRuns []
-                |> List.filter (fst >> filter)
+                |> List.filter (first >> filter)
                 |> List.indexedMap (,)
                 |> List.foldr (dispatchHelper model.options) ( model, [] )
 
         newModel =
-            fst nextState
+            first nextState
 
         statuses =
             newModel.statuses
                 |> Dict.toList
     in
-        ( newModel, Cmd.batch <| (emitStatus statuses) :: (snd nextState) )
+        ( newModel, Cmd.batch <| (emitStatus statuses) :: (second nextState) )
 
 
 {-| Compacts a list of named steps into an already provided Model and list of commands.
@@ -293,7 +294,7 @@ dispatchHelper options ( i, ( name, steps ) ) ( model, msgs ) =
         dispatchCommand =
             Time.now
                 |> Task.map (StartRun key wMsg)
-                |> Task.perform never identity
+                |> Task.perform identity
     in
         ( { model
             | sessions = newSessions
@@ -339,7 +340,7 @@ delegateMessage runName action subModel thisModel =
                     ( updatedModel
                     , Time.now
                         |> Task.map (StartedRun runName)
-                        |> Task.perform never identity
+                        |> Task.perform identity
                     )
 
                 Progress remaining result nextStep ->
@@ -413,7 +414,7 @@ endSummary runName thisModel subModel =
         signalStop =
             Time.now
                 |> Task.map (StopRun runName runSummary)
-                |> Task.perform never identity
+                |> Task.perform identity
 
         persistScreenshots =
             emitScreenshots ( runName, runSummary.screenshots )
@@ -480,7 +481,7 @@ getFirstRunTime : Dict String Time -> Time -> Time
 getFirstRunTime startTimes default =
     startTimes
         |> Dict.toList
-        |> List.map snd
+        |> List.map second
         |> List.minimum
         |> Maybe.withDefault default
 

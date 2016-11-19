@@ -12,7 +12,8 @@ module Webdriver.Process
 
 import Webdriver.LowLevel as Wd exposing (Error, Browser)
 import Webdriver.Step exposing (..)
-import Task exposing (Task, perform)
+import Task exposing (Task, attempt)
+import Tuple exposing (second)
 import Expect exposing (fail)
 
 
@@ -108,7 +109,7 @@ update msg model =
 
                 command =
                     Task.succeed (StepResult "Begin session" { expectation = Nothing, screenshot = Nothing })
-                        |> Task.perform identity Process
+                        |> Task.perform Process
             in
                 ( newModel, command, Spawned )
 
@@ -194,23 +195,23 @@ errorMessage error =
 
 startSession : Options -> Cmd Msg
 startSession options =
-    perform identity
-        Initiated
-        (Wd.open options
-            |> Task.map (\( _, browser ) -> browser)
-            |> Task.mapError (\error -> OnError "Connecting to Selenium Server" error Nothing)
-        )
+    Wd.open options
+        |> Task.map (\( _, browser ) -> Initiated browser)
+        |> Task.mapError (\error -> OnError "Connecting to Selenium Server" error Nothing)
+        |> attempt toMessage
 
 
 finishSession : Wd.Browser -> Cmd Msg
 finishSession browser =
     Wd.end browser
-        |> perform (always Finish) (always Finish)
+        |> Task.map (always Finish)
+        |> Task.mapError (always Finish)
+        |> attempt toMessage
 
 
 (&>) : Task x y -> Task x z -> Task x z
 (&>) t1 t2 =
-    t1 `Task.andThen` \_ -> t2
+    t1 |> Task.andThen (\_ -> t2)
 
 
 (#>) : Task x y -> Task x z -> Task x ( y, z )
@@ -237,7 +238,7 @@ inputAutoWait selector browser =
 validateSelector : Selector -> Wd.Browser -> Task Wd.Error ()
 validateSelector selector browser =
     Wd.countElements selector browser
-        `Task.andThen`
+        |> Task.andThen
             (\count ->
                 if count > 1 then
                     Task.fail
@@ -276,11 +277,11 @@ autoScreenshot browser meta toExpectation task =
 screenshotOnError : Wd.Browser -> String -> Task Wd.Error a -> Task Msg a
 screenshotOnError browser desc task =
     task
-        `Task.onError`
+        |> Task.onError
             (\error ->
                 Wd.viewportScreenshot browser
-                    `Task.onError` (\error -> Task.fail (OnError desc error Nothing))
-                    `Task.andThen` (\screenshot -> Task.fail (OnError desc error (Just screenshot)))
+                    |> Task.onError (\error -> Task.fail (OnError desc error Nothing))
+                    |> Task.andThen (\screenshot -> Task.fail (OnError desc error (Just screenshot)))
             )
 
 
@@ -289,8 +290,9 @@ convertAssertion browser meta assert task =
     task
         |> autoScreenshot browser meta (assert >> Just)
         |> screenshotOnError browser meta.name
-        |> Task.map snd
-        |> Task.perform identity Process
+        |> Task.map second
+        |> Task.map Process
+        |> attempt toMessage
 
 
 process : Step -> Wd.Browser -> Cmd Msg
@@ -323,22 +325,25 @@ process action browser =
                         |> Task.mapError (\_ -> Wd.Never)
                         |> autoScreenshot browser meta (Just)
                         |> screenshotOnError browser meta.name
-                        |> Task.map snd
-                        |> perform identity Process
+                        |> Task.map second
+                        |> Task.map Process
+                        |> attempt toMessage
 
                 AssertionWebdriver meta task ->
                     task browser
                         |> autoScreenshot browser meta Just
                         |> screenshotOnError browser meta.name
-                        |> Task.map snd
-                        |> perform identity Process
+                        |> Task.map second
+                        |> Task.map Process
+                        |> attempt toMessage
 
                 ReturningUnit meta step ->
                     processStep step browser
                         |> autoScreenshot browser meta (always Nothing)
                         |> screenshotOnError browser meta.name
-                        |> Task.map snd
-                        |> perform identity Process
+                        |> Task.map second
+                        |> Task.map Process
+                        |> attempt toMessage
 
                 BranchMaybe meta step decider ->
                     processMaybeStep step browser
@@ -366,14 +371,14 @@ process action browser =
                         |> autoScreenshot browser meta (always Nothing)
                         |> screenshotOnError browser meta.name
                         |> Task.map (resolveBranch identity)
-                        |> Task.perform identity identity
+                        |> attempt toMessage
 
                 BranchWebdriver meta task ->
                     task browser
                         |> autoScreenshot browser meta (always Nothing)
                         |> screenshotOnError browser meta.name
                         |> Task.map (resolveBranch identity)
-                        |> Task.perform identity identity
+                        |> attempt toMessage
     in
         command
 
@@ -384,7 +389,7 @@ performBranch meta browser decider task =
         |> autoScreenshot browser meta (always Nothing)
         |> screenshotOnError browser meta.name
         |> Task.map (resolveBranch decider)
-        |> Task.perform identity identity
+        |> Task.attempt toMessage
 
 
 resolveBranch : (a -> List Step) -> ( a, StepResult ) -> Msg
@@ -631,6 +636,11 @@ processStep step browser =
             Wd.close browser
 
 
-never : Never -> a
-never a =
-    never a
+toMessage : Result Msg Msg -> Msg
+toMessage task =
+    case task of
+        Err msg ->
+            msg
+
+        Ok msg ->
+            msg
