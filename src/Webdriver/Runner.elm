@@ -6,10 +6,10 @@ port module Webdriver.Runner
         , Flags
         , RunStatus
         , Summary
+        , WebdriverRunner
+        , run
         , describe
         , group
-        , begin
-        , update
         )
 
 {-| Allows you to execute a list list of steps or a group of these steps and get a summary
@@ -19,7 +19,7 @@ using a port and through the Summary type alias.
 
 ## Types
 
-@docs Model, Run, Msg, Flags, RunStatus, Summary
+@docs Model, Run, Msg, Flags, RunStatus, Summary, WebdriverRunner
 
 ## Creating runs and groups of runs
 
@@ -30,7 +30,7 @@ inside groups.
 
 ## Kicking it off
 
-@docs begin, update
+@docs run
 
 -}
 
@@ -43,6 +43,11 @@ import Tuple exposing (first, second)
 import Webdriver as W exposing (..)
 import Webdriver.Assert exposing (..)
 import Webdriver.Process as P exposing (Model, OutMsg(..), StepResult(..))
+
+
+-- Required to prevent a bug in elm  0.18
+
+import Json.Decode
 
 
 {-| The model used for concurrently running multiple lists of steps
@@ -95,6 +100,23 @@ by name:
 type alias Flags =
     { filter : Maybe String
     }
+
+
+{-| Describes programs created by this module. To be used as the main function signature
+-}
+type alias WebdriverRunner =
+    Platform.Program Flags Model Msg
+
+
+{-| Runs all the webdriver steps and displays the results
+-}
+run : Options -> Run -> WebdriverRunner
+run options steps =
+    Platform.programWithFlags
+        { init = begin options steps
+        , update = update
+        , subscriptions = always Sub.none
+        }
 
 
 {-| Describes with a name a list of steps to be executed

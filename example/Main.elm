@@ -1,25 +1,18 @@
 port module Main exposing (..)
 
-import Html
-import Html.App as App
 import Webdriver as W exposing (..)
 import Webdriver.Assert exposing (..)
-import Webdriver.Runner as R exposing (Run, update, begin, group, describe)
+import Webdriver.Runner as R exposing (WebdriverRunner, Run, run, group, describe)
 import Expect
 
 
-main : Program R.Flags
+main : WebdriverRunner
 main =
-    App.programWithFlags
-        { init = begin basicOptions <| group "Find in Google" [ searchElm, searchHackerNews ]
-        , update = R.update
-        , view = \_ -> Html.text ""
-        , subscriptions = always Sub.none
-        }
+    run basicOptions <| group "Find in Google" [ searchElm, searchHackerNews ]
 
 
-firstLink' : String
-firstLink' =
+firstLink_ : String
+firstLink_ =
     "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a"
 
 
@@ -30,8 +23,8 @@ searchElm =
         , title <| Expect.equal "this will fail!"
         , elementCount "input[name='q']" <| Expect.atLeast 1
         , setValue "input[name='q']" "Elm lang"
-        , elementText firstLink' <| Expect.equal "Elm is the best"
-        , click firstLink'
+        , elementText firstLink_ <| Expect.equal "Elm is the best"
+        , click firstLink_
         , pause 1000 |> withScreenshot True
         , title <| Expect.equal "home"
         ]
@@ -44,8 +37,8 @@ searchHackerNews =
         , title <| Expect.equal "Google"
         , elementCount "input[name='q']" <| Expect.atLeast 1
         , setValue "input[name='q']" "Hacker News"
-        , elementText firstLink' <| Expect.equal "Hacker News"
-        , click firstLink'
+        , elementText firstLink_ <| Expect.equal "Hacker News"
+        , click firstLink_
         , pause 1000
         , title <| Expect.equal "home"
         ]

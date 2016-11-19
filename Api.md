@@ -63,6 +63,14 @@ type alias Summary =
 Represents the final result of a single run or a group of runs.
 
 ---
+```elm
+type alias WebdriverRunner = 
+  Platform.Program Webdriver.Runner.Flags Webdriver.Runner.Model Webdriver.Runner.Msg
+```
+
+Describes programs created by this module. To be used as the main function signature
+
+---
 
 
 ## Creating runs and groups of runs
@@ -96,306 +104,10 @@ Groups a list Runs under the same name
 ## Kicking it off
 
 ```elm
-begin : Webdriver.Options
-    -> Webdriver.Runner.Run
-    -> Webdriver.Runner.Flags
-    -> ( Webdriver.Runner.Model, Platform.Cmd.Cmd Webdriver.Runner.Msg )
+run : Webdriver.Options -> Webdriver.Runner.Run -> Webdriver.Runner.WebdriverRunner
 ```
 
-Creates the initial `update` state out of the browser options and
-a Run suite. This is usually the function you will call to feed your
-main program.
-
-    begin flags browserOptions (describe "All Tests" [...])
-
----
-```elm
-update : Webdriver.Runner.Msg
-    -> Webdriver.Runner.Model
-    -> ( Webdriver.Runner.Model, Platform.Cmd.Cmd Webdriver.Runner.Msg )
-```
-
-Starts the browser sessions and executes all the steps. Finally, it displays a sumamry
-of the run with the help of a port.
-
----
-
-
-
-
----
-
-#Webdriver.Branch
-
- Enables you to conditionally execute a list of steps depending on the current
-state of the browser.
-
-You can use this module to create logic branches and loops in the execution of your run.
-
-## Cookies
-
-```elm
-ifCookie : String
-    -> (Maybe.Maybe String -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the value of the specified cookie
-
----
-```elm
-ifCookieExists : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the provided list of steps if the specified cookie exists
-
----
-```elm
-ifCookieNotExists : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the provided list of steps if the specified cookie does not exist
-
----
-
-
-## Page properties
-
-```elm
-ifUrl : (String -> List Webdriver.Step.Step) -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the current url
-
----
-```elm
-ifPageHTML : (String -> List Webdriver.Step.Step) -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the current page source
-
----
-```elm
-ifTitle : (String -> List Webdriver.Step.Step) -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the current page title
-
----
-```elm
-ifElementCount : String
-    -> (Int -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the number of elements returned by the selector
-
----
-
-
-## Element properties
-
-```elm
-ifAttribute : String
-    -> String
-    -> (Maybe.Maybe String -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the value of the specified attribute in the given element
-
----
-```elm
-ifCss : String
-    -> String
-    -> (Maybe.Maybe String -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the value of the specified css attribute in the given element
-
----
-```elm
-ifElementHTML : String
-    -> (String -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the value of the HTMl for the given element
-
----
-```elm
-ifText : String
-    -> (String -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the value of the text node of the given element
-
----
-```elm
-ifExists : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the specified element exists in the DOM
-
----
-```elm
-ifNotExist : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the specified element does not exist in the DOM
-
----
-```elm
-ifVisible : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if element is visible
-
----
-```elm
-ifNotVisible : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if element is not visible
-
----
-
-
-## Element Dimensions and Position
-
-```elm
-ifElementSize : String
-    -> (( Int, Int ) -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the size (width, height) of the element
-
----
-```elm
-ifElementPosition : String
-    -> (( Int, Int ) -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the location (x, y) of the element
-
----
-```elm
-ifElementViewPosition : String
-    -> (( Int, Int ) -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the location (x, y) of the element relative to the current viewport
-
----
-```elm
-ifVisibleWithinViewport : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the element is visible within the viewport
-
----
-```elm
-ifNotVisibleWithinViewport : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the element is not visible within the viewport
-
----
-
-
-## Form Element Properties
-
-```elm
-ifValue : String
-    -> (String -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps the passed function returns depending
-on the value of the specified input field
-
----
-```elm
-ifEnabled : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the input element is enabled
-
----
-```elm
-ifNotEnabled : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the input element is not enabled
-
----
-```elm
-ifOptionIsSelected : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the option in the select box is selected
-
----
-```elm
-ifNotOptionIsSelected : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
-```
-
-Executes the list of steps if the option in the select box is not selected
-
----
-
-
-## Custom branch logic
-
-```elm
-ifTask : Task.Task Basics.Never (List Webdriver.Step.Step) -> Webdriver.Step.Step
-```
-
-Executes the list of steps returned as the result of performing a Task
-
----
-```elm
-ifDriverCommand : (Webdriver.LowLevel.Browser -> Task.Task Webdriver.LowLevel.Error a)
-    -> (a -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps resulting of executing a LowLevel Webdriver task. This allows you to create
-custom sequences of tasks to be executed directly in the webdriver, maybe after getting
-values from other tasks.
-
----
-```elm
-ifSequenceCommands : String
-    -> List (Webdriver.LowLevel.Browser
-    -> Task.Task Webdriver.LowLevel.Error a)
-    -> (List a -> List Webdriver.Step.Step)
-    -> Webdriver.Step.Step
-```
-
-Executes the list of steps that result of executing a list of LowLevel Webdriver task. This allows you to create custom sequences of tasks to be executed directly in the webdriver, maybe after getting
-values from other tasks.
-
-    ifSequenceCommands "Custom cookie check"
-        [Wd.getCookie "user", Wd.getCookie "legacy_user"]
-        (\ (c :: lc :: []) -> [ setValue "#someInput" c, setValue "#anotherInput" lc ] )
+Runs all the webdriver steps and displays the results
 
 ---
 
@@ -1105,6 +817,285 @@ the behavior, it needs to be manually triggered.
 
 ---
 
+#Webdriver.Branch
+
+ Enables you to conditionally execute a list of steps depending on the current
+state of the browser.
+
+You can use this module to create logic branches and loops in the execution of your run.
+
+## Cookies
+
+```elm
+ifCookie : String
+    -> (Maybe.Maybe String -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the value of the specified cookie
+
+---
+```elm
+ifCookieExists : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the provided list of steps if the specified cookie exists
+
+---
+```elm
+ifCookieNotExists : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the provided list of steps if the specified cookie does not exist
+
+---
+
+
+## Page properties
+
+```elm
+ifUrl : (String -> List Webdriver.Step.Step) -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the current url
+
+---
+```elm
+ifPageHTML : (String -> List Webdriver.Step.Step) -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the current page source
+
+---
+```elm
+ifTitle : (String -> List Webdriver.Step.Step) -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the current page title
+
+---
+```elm
+ifElementCount : String
+    -> (Int -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the number of elements returned by the selector
+
+---
+
+
+## Element properties
+
+```elm
+ifAttribute : String
+    -> String
+    -> (Maybe.Maybe String -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the value of the specified attribute in the given element
+
+---
+```elm
+ifCss : String
+    -> String
+    -> (Maybe.Maybe String -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the value of the specified css attribute in the given element
+
+---
+```elm
+ifElementHTML : String
+    -> (String -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the value of the HTMl for the given element
+
+---
+```elm
+ifText : String
+    -> (String -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the value of the text node of the given element
+
+---
+```elm
+ifExists : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the specified element exists in the DOM
+
+---
+```elm
+ifNotExist : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the specified element does not exist in the DOM
+
+---
+```elm
+ifVisible : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if element is visible
+
+---
+```elm
+ifNotVisible : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if element is not visible
+
+---
+
+
+## Element Dimensions and Position
+
+```elm
+ifElementSize : String
+    -> (( Int, Int ) -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the size (width, height) of the element
+
+---
+```elm
+ifElementPosition : String
+    -> (( Int, Int ) -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the location (x, y) of the element
+
+---
+```elm
+ifElementViewPosition : String
+    -> (( Int, Int ) -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the location (x, y) of the element relative to the current viewport
+
+---
+```elm
+ifVisibleWithinViewport : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the element is visible within the viewport
+
+---
+```elm
+ifNotVisibleWithinViewport : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the element is not visible within the viewport
+
+---
+
+
+## Form Element Properties
+
+```elm
+ifValue : String
+    -> (String -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps the passed function returns depending
+on the value of the specified input field
+
+---
+```elm
+ifEnabled : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the input element is enabled
+
+---
+```elm
+ifNotEnabled : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the input element is not enabled
+
+---
+```elm
+ifOptionIsSelected : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the option in the select box is selected
+
+---
+```elm
+ifNotOptionIsSelected : String -> List Webdriver.Step.Step -> Webdriver.Step.Step
+```
+
+Executes the list of steps if the option in the select box is not selected
+
+---
+
+
+## Custom branch logic
+
+```elm
+ifTask : Task.Task Basics.Never (List Webdriver.Step.Step) -> Webdriver.Step.Step
+```
+
+Executes the list of steps returned as the result of performing a Task
+
+---
+```elm
+ifDriverCommand : (Webdriver.LowLevel.Browser -> Task.Task Webdriver.LowLevel.Error a)
+    -> (a -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps resulting of executing a LowLevel Webdriver task. This allows you to create
+custom sequences of tasks to be executed directly in the webdriver, maybe after getting
+values from other tasks.
+
+---
+```elm
+ifSequenceCommands : String
+    -> List (Webdriver.LowLevel.Browser
+    -> Task.Task Webdriver.LowLevel.Error a)
+    -> (List a -> List Webdriver.Step.Step)
+    -> Webdriver.Step.Step
+```
+
+Executes the list of steps that result of executing a list of LowLevel Webdriver task. This allows you to create custom sequences of tasks to be executed directly in the webdriver, maybe after getting
+values from other tasks.
+
+    ifSequenceCommands "Custom cookie check"
+        [Wd.getCookie "user", Wd.getCookie "legacy_user"]
+        (\ (c :: lc :: []) -> [ setValue "#someInput" c, setValue "#anotherInput" lc ] )
+
+---
+
+
+
+
+---
+
 #Webdriver.LowLevel
 
  Offers access to the webdriver.io js library
@@ -1725,4 +1716,3 @@ Allows you to execute an arbitrary command in the client by a name. The return v
 of the comand coms as a Json.Encode.Value.
 
     customCommand "windowHandleSize" [JE.string "dc30381e-e2f3-9444-8bf3-12cc44e8372a"] browser
-
