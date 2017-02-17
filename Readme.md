@@ -25,7 +25,7 @@ This will create a new folder `webdriver-tests`. Change to that folder, where yo
 and a `Tests.elm` file. You can add your tests to `Tests.elm` without having to touch anything else!
 
 If you need to use modules from your project, make sure you also add all the dependencies from the main
-`elm-package.json` into `webdriver-tests/elm-package.json`. Rember to keep those in sync.
+`elm-package.json` into `webdriver-tests/elm-package.json`. Remember to keep those in sync.
 
 ### Install selenium webdriver
 
