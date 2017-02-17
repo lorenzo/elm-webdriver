@@ -2,7 +2,7 @@
 
 MY_PATH="$(cd "$(dirname "$0")" && pwd -P)"
 TEMPLATES=`dirname "$MY_PATH"`
-TEMPLATES="$TEMPLATES"/templates
+TEMPLATES="$TEMPLATES"/elm-webdriver/templates
 
 if [[ $1 == "init" ]]
 then
