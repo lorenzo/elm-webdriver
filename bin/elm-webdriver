@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-MY_PATH="$(cd "$(dirname "$0")" && pwd -P)"
-TEMPLATES=`dirname "$MY_PATH"`
-TEMPLATES="$TEMPLATES"/elm-webdriver/templates
+NODE_MODULES_BIN_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+NODE_MODULES_DIR=`dirname "$NODE_MODULES_BIN_DIR"`
+ELM_WEBDRIVER_PATH="$NODE_MODULES_DIR"/elm-webdriver
 
 if [[ $1 == "init" ]]
 then
 	echo "Copying template files to webdriver-tests"
-	exec cp -a $TEMPLATES ./webdriver-tests
+	exec cp -a $ELM_WEBDRIVER_PATH/templates ./webdriver-tests
 fi
 
 if [[ $# -gt 0 ]];
@@ -29,7 +29,7 @@ compile() {
 	elm-make --yes "$FILE" --output "$1" > /dev/null
 }
 
-compile "$TARGET" && /usr/bin/env node $MY_PATH/runner.js "$TARGET" $*
+compile "$TARGET" && /usr/bin/env node $ELM_WEBDRIVER_PATH/bin/runner.js "$TARGET" $*
 
 EXIT=$?
 
