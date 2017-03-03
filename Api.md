@@ -403,7 +403,7 @@ Asserts the result of executing a list of LowLevel Webdriver task. This allows y
 custom sequences of tasks to be executed directly in the webdriver, maybe after getting
 values from other tasks.
 
-    driverCommand "Custom cookie check"
+    sequenceCommands "Custom cookie check"
         [Wd.getCookie "user", Wd.getCookie "legacy_user"]
         (Maybe.oneOf >> Maybe.map (Expec.equal "2) >> Maybe.withDefault (Expect.fail "Cookie is missing"))
 
