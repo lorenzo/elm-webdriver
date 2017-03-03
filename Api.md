@@ -317,7 +317,7 @@ visible : String -> Webdriver.Step.Step
 
 Asserts that an element to be visible anywhere in the page. Only one element may be matched by the selector.
 
-    enabled "#username"
+   visible "#username"
 
 ---
 ```elm
@@ -326,7 +326,7 @@ visibleWithinViewport : String -> Webdriver.Step.Step
 
 Asserts that an element to be visible within the viewport. Only one element may be matched by the selector.
 
-    enabled "#username"
+    visibleWithinViewport "#username"
 
 ---
 
