@@ -808,8 +808,8 @@ triggerClick : String -> Webdriver.Step
 ```
 
 Programatically trigger a click in the elements specified in the selector.
-This exists because some pages hijack in an odd way mouse click, and in order to test
-the behavior, it needs to be manually triggered.
+This exists because some pages hijack mouse clicks in an odd way and, in order to test
+their behavior, mouse clicks must be triggered manually.
 
 ---
 
