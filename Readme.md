@@ -29,25 +29,40 @@ If you need to use modules from your project, make sure you also add all the dep
 
 ### Install selenium webdriver
 
-The Selenium standalone server is required for running the tests locally. You can download the standalone sever
-from [the official Selenium page](http://www.seleniumhq.org/download/). Once the `.jar` file is downloaded, you
-can run it with the following command:
+To run tests locally you need the Selenium standalone server.  
+Download the `.jar` file from [the official Selenium page](http://www.seleniumhq.org/download/)
+and run it like this:
 
 ```sh
 java -jar selenium-server-standalone.jar
 ```
 
-You are now ready to run your tests in another terminal, while the standalone server is still running:
+
+You are now ready to run your tests. In another terminal, while the standalone server is still running:
 
 ```sh
 cd webdriver-tests
 ../node_modules/.bin/elm-webdriver
 ```
-
 You can also filter tests by name:
 
 ```sh
 ../node_modules/.bin/elm-webdriver --filter "Some Test Name"
+```
+
+If the Selenium server complains:
+
+```
+WARN - Exception: The path to the driver executable must be set by the webdriver.gecko.driver system property; 
+for more information, see https://github.com/mozilla/geckodriver. 
+The latest version can be downloaded from https: //github.com/mozilla/geckodriver/releases                  
+```
+
+Make sure you have [the geckodriver](https://github.com/mozilla/geckodriver/releases) installed,
+and tell Selenium where it is by setting the system property:
+
+```sh
+java -Dwebdriver.gecko.driver="<path-to-geckodriver>" -jar selenium-server-standalone.jar
 ```
 
 ## API
