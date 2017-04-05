@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
     "summary": "Webdriver.io effects manager",
-    "repository": "http://github.com/lorenzo/webdriver.git",
+    "repository": "http://github.com/lorenzo/elm-webdriver.git",
     "license": "BSD3",
     "source-directories": [
         "src"

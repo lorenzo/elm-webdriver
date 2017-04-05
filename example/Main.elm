@@ -2,13 +2,14 @@ port module Main exposing (..)
 
 import Webdriver as W exposing (..)
 import Webdriver.Assert exposing (..)
-import Webdriver.Runner as R exposing (WebdriverRunner, Run, run, group, describe)
+import Webdriver.Runner as R exposing (WebdriverRunner, Run, PortEvent, run, group, describe)
 import Expect
 
+port emit : PortEvent -> Cmd msg
 
 main : WebdriverRunner
 main =
-    run basicOptions <| group "Find in Google" [ searchElm, searchHackerNews ]
+    run emit basicOptions <| group "Find in Google" [ searchElm, searchHackerNews ]
 
 
 firstLink_ : String
