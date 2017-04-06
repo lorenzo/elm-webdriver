@@ -411,6 +411,12 @@ var _nomalab$elm_webdriver$Native_Webdriver = function() {
     });
   }
 
+  function executeScriptArity0(script, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.execute(script), {});
+    });
+  }
+
   function handleError(error, callback, context) {
     var tag = {
       ctor: "UnknownError",
@@ -497,6 +503,7 @@ var _nomalab$elm_webdriver$Native_Webdriver = function() {
     getLocation: F2(getLocation),
     getLocationInView: F2(getLocationInView),
     countElements: F2(countElements),
-    customCommand: F3(customCommand)
+    customCommand: F3(customCommand),
+    executeScriptArity0: F2(executeScriptArity0)
   };
 }();

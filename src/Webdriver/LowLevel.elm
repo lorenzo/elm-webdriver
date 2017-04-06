@@ -65,6 +65,7 @@ module Webdriver.LowLevel
         , cookieExists
         , countElements
         , customCommand
+        , executeScriptArity0
         )
 
 {-| Offers access to the webdriver.io js library
@@ -633,3 +634,7 @@ of the comand coms as a Json.Encode.Value.
 customCommand : String -> List Value -> Browser -> Task Error Value
 customCommand =
     Native.Webdriver.customCommand
+
+executeScriptArity0 : String -> Browser -> Task Error Value
+executeScriptArity0 =
+   Native.Webdriver.executeScriptArity0
