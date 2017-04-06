@@ -1,4 +1,4 @@
-var _lorenzo$elm_webdriver$Native_Webdriver = function() {
+var _nomalab$elm_webdriver$Native_Webdriver = function() {
   var path = require('path');
   var webdriverio = require(path.resolve(process.cwd(), 'node_modules', 'webdriverio'));
 
