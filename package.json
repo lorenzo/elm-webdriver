@@ -10,7 +10,7 @@
     "example": "example"
   },
   "bin": {
-    "elm-webdriver": "bin/elm-webdriver"
+    "elm-webdriver": "bin/elm-webdriver.js"
   },
   "repository": {
     "type": "git",
