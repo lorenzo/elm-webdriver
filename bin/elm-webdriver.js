@@ -71,20 +71,13 @@ function fileExists(filename) {
   }
 }
 
-var generatedFileFullPath = path.resolve(__dirname, 'elm_webdriver-'.concat(uuid.v4(), '.test.js'));
+var generatedFileFullPath = path.resolve(__dirname, 'elm_webdriver-' + uuid.v4() + '.test.js');
 
 createTestFile(generatedFileFullPath)
   .then(compileTests)
   .then(run)
-  .then(deleteTestFile)
   .then(function () {
     process.exit(0)
-  })
-  .catch(function (e) {
-    return deleteTestFile(generatedFileFullPath)
-      .then(function () {
-        throw e
-      })
   })
   .catch(function (e) {
     if (e) {
@@ -93,6 +86,7 @@ createTestFile(generatedFileFullPath)
     process.exit(1)
   })
 
+process.on('exit', function () { return fs.unlinkSync(generatedFileFullPath) })
 
 // Where the magic happen
 function createTestFile(outputPath) {
@@ -106,17 +100,7 @@ function createTestFile(outputPath) {
   })
 }
 
-function deleteTestFile(outputPath) {
-  return new Promise(function (resolve, reject) {
-    fs.unlink(outputPath, function (err, info) {
-      if (err) reject(err)
-      else resolve()
-    })
-  })
-}
-
 function compileTests(outputPath) {
-  console.log(outputPath);
   return new Promise(function (resolve, reject) {
     compile([ testFile ], {
       output: outputPath,

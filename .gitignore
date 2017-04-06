@@ -6,3 +6,4 @@ repl-temp-*
 node_modules
 # Generated stuff
 screenshots
+*.test.js
