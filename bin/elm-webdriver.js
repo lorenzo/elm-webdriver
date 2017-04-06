@@ -5,13 +5,14 @@ process.title = 'elm-webdriver'
 var path = require('path')
 var fs = require('fs')
 var compile = require('node-elm-compiler').compile
-var temp = require('temp').track()
 var spawn = require('cross-spawn')
 var cl = require('chalkline');
 var chalk = require('chalk');
 var ProgressBar = require('ascii-progress');
 var sanitize = require('sanitize-filename');
 var mkdirp = require('mkdirp');
+var cnst = require('constants');
+var uuid = require('uuid');
 
 var moduleRoot = path.resolve(__dirname, '..')
 
@@ -70,7 +71,9 @@ function fileExists(filename) {
   }
 }
 
-createTmpFile()
+var generatedFileFullPath = path.resolve(__dirname, 'elm_webdriver-' + uuid.v4() + '.test.js');
+
+createTestFile(generatedFileFullPath)
   .then(compileTests)
   .then(run)
   .then(function () {
@@ -83,13 +86,16 @@ createTmpFile()
     process.exit(1)
   })
 
+process.on('exit', function () { return fs.unlinkSync(generatedFileFullPath) })
 
 // Where the magic happen
-function createTmpFile() {
+function createTestFile(outputPath) {
   return new Promise(function (resolve, reject) {
-    temp.open({ prefix: 'elm_webdriver_', suffix: '.test.js' }, function (err, info) {
+    var RDWR_EXCL = cnst.O_CREAT | cnst.O_TRUNC | cnst.O_RDWR | cnst.O_EXCL;
+
+    fs.open(outputPath, RDWR_EXCL, function (err, fd) {
       if (err) reject(err)
-      else resolve(info.path)
+      else resolve(outputPath)
     })
   })
 }
@@ -142,9 +148,9 @@ function run(outputPath) {
         case 'exit':
           var success = onExit(context, event.value);
           if (success) {
-            resolve()
+            resolve(outputPath)
           } else {
-            reject()
+            reject('Failed onExit')
           }
           break;
         default:
