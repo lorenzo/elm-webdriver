@@ -75,24 +75,24 @@ toPort event =
   case event of
     Status list ->
       list
-      |> List.map (\(str, sts) -> Encode.list [ Encode.string str, encodeRunStatus sts ])
+      |> List.map (\(name, sts) -> Encode.object [ ("name", Encode.string name), ("value", encodeRunStatus sts) ])
       |> Encode.list
       |> PortEvent "status"
 
     StatusUpdate list ->
       list
-      |> List.map (\(str, sts) -> Encode.list [ Encode.string str, encodeRunStatus sts ])
+      |> List.map (\(name, sts) -> Encode.object [ ("name", Encode.string name), ("value", encodeRunStatus sts) ])
       |> Encode.list
       |> PortEvent "statusUpdate"
 
     Screenshots runName screenshots ->
-      [ Encode.string runName, Encode.list <| List.map Encode.string screenshots ]
-      |> Encode.list
+      [ ("name", Encode.string runName), ("shots", Encode.list <| List.map Encode.string screenshots) ]
+      |> Encode.object
       |> PortEvent "screenshots"
 
     Log runName summary ->
-      [ Encode.string runName, encodeSummary summary ]
-      |> Encode.list
+      [ ("name", Encode.string runName), ("value", encodeSummary summary) ]
+      |> Encode.object
       |> PortEvent "log"
 
     Exit summary ->
@@ -223,6 +223,7 @@ type Msg
     | StartedRun String Time
     | StopRun String Summary Time
     | DriverMsg String P.Msg
+    | Done Summary
 
 
 {-| Creates a new empty Model.
@@ -331,11 +332,15 @@ update emit msg model =
 
                 terminate =
                     if Dict.isEmpty model.sessions then
-                        emit <| Exit <| exitOutput model.summary (firstTime stopTime) stopTime
+                        Task.succeed (exitOutput model.summary (firstTime stopTime) stopTime)
+                            |> Task.perform Done
                     else
                         Cmd.none
             in
                 ( model, Cmd.batch [ emit <| Log runName outputWithTime, terminate ] )
+
+        Done summary ->
+            model ! [ emit <| Exit summary ]
 
 
 dispatchTests : InternalEmitter -> Maybe String -> Model -> ( Model, Cmd Msg )

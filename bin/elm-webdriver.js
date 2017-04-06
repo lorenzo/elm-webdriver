@@ -196,14 +196,14 @@ function getPort(elmInstance) {
 // First display of a run
 function onStatus(context, statuses) {
   statuses.forEach(function (status) {
-    context.statusBars[status[0]] = new ProgressBar({
+    context.statusBars[status.name] = new ProgressBar({
       schema: context.defaultSchema,
-      total : status[1].total
+      total : status.value.total
     });
 
-    context.statusBars[status[0]].tick(0, {
-      name: status[0],
-      executing: "→ " + status[1].nextStep
+    context.statusBars[status.name].tick(0, {
+      name: status.name,
+      executing: "→ " + status.value.nextStep
     });
   });
 }
@@ -213,22 +213,22 @@ function onStatus(context, statuses) {
 function onStatusUpdate(context, statuses) {
   statuses
     .filter(function (status) {
-      return typeof context.statusBars[status[0]] !== 'undefined';
+      return typeof context.statusBars[status.name] !== 'undefined';
     })
     .forEach(function (status) {
-      var bar = context.statusBars[status[0]];
-      var ticks =  (status[1].total - status[1].remaining) - bar.current;
+      var bar = context.statusBars[status.name];
+      var ticks =  (status.value.total - status.value.remaining) - bar.current;
 
-      if (status[1].failed) {
+      if (status.value.failed) {
         bar.setSchema(context.defaultSchema.replace(':bar.green', ':bar.red'), {
-          name: status[0],
-          executing: "→ " + status[1].nextStep
+          name: status.name,
+          executing: "→ " + status.value.nextStep
         });
       }
 
       bar.tick(ticks, {
-        name: status[0],
-        executing: "→ " + status[1].nextStep
+        name: status.name,
+        executing: "→ " + status.value.nextStep
       });
     });
 }
@@ -236,21 +236,21 @@ function onStatusUpdate(context, statuses) {
 
 // Save summary
 function onLog(context, summary) {
-  context.summaries[summary[0]] = summary;
+  context.summaries[summary.name] = summary;
 }
 
 
 // Save screenshots
 function onScreenshots(context, data) {
-  if (data[1].length === 0) {
+  if (data.shots.length === 0) {
     return;
   }
 
-  var name = sanitize(data[0]);
+  var name = sanitize(data.name);
   var dir = path.join("screenshots", name);
   mkdirp.sync(dir);
 
-  data[1].forEach(function (s, i) {
+  data.shots.forEach(function (s, i) {
     fs.writeFileSync(path.join(dir, i + ".png"), new Buffer(s, 'base64'));
   });
 }
@@ -272,8 +272,8 @@ function onExit(context, summary) {
 
 // Print with style a summary
 function printSummary(summary) {
-  var name = summary[0];
-  var summary = summary[1];
+  var name = summary.name;
+  var summary = summary.value;
   var fn = summary.failed > 0 ? cl.red : cl.green;
 
 

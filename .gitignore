@@ -4,3 +4,5 @@ elm-stuff/
 repl-temp-*
 # JS stuff
 node_modules
+# Generated stuff
+screenshots
