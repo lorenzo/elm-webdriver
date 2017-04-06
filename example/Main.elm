@@ -13,7 +13,7 @@ main =
 
 firstLink_ : String
 firstLink_ =
-    "#rso > div:nth-child(1) > div:nth-child(1) > div > h3 > a"
+    "div#rso > div:nth-child(1) > div:nth-child(1) > div > div > h3 > a"
 
 searchElm : Run
 searchElm =
@@ -22,6 +22,7 @@ searchElm =
         , title <| Expect.equal "Google"
         , elementCount "input[name='q']" <| Expect.atLeast 1
         , setValue "input[name='q']" "Elm lang"
+        , waitForExist firstLink_ 2000
         , elementText firstLink_ <| Expect.equal "Elm"
         , click firstLink_
         , pause 1000 |> withScreenshot True
