@@ -1,12 +1,27 @@
 var _nomalab$elm_webdriver$Native_Webdriver = function() {
   var path = require('path');
-  var webdriverio = require(path.resolve(process.cwd(), 'node_modules', 'webdriverio'));
+  var fs = require('fs');
+  var webdriverio = requireWebdriverio(process.cwd());
 
   var nativeBinding = _elm_lang$core$Native_Scheduler.nativeBinding;
   var succeed = _elm_lang$core$Native_Scheduler.succeed;
   var fail = _elm_lang$core$Native_Scheduler.fail;
   var tuple2 = _elm_lang$core$Native_Utils.Tuple2;
   var unit = {ctor: '_Tuple0'};
+
+	function requireWebdriverio(cwd) {
+		try {
+			fs.accessSync(path.join(cwd, 'node_modules'));
+			return require(path.resolve(cwd, 'node_modules', 'webdriverio'));
+		} catch (e) {
+			var lastSlashIndex = cwd.lastIndexOf('/');
+      if (e.code === 'MODULE_NOT_FOUND' || lastSlashIndex === 0) {
+        throw e;
+			}
+			var previousDir = cwd.slice(0, lastSlashIndex);
+      return requireWebdriverio(previousDir);
+		}
+	}
 
   function catchPromise(callback, context, promise) {
       return promise.catch(function (error) {

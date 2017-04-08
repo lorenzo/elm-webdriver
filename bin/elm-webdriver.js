@@ -8,7 +8,6 @@ var compile = require('node-elm-compiler').compile
 var spawn = require('cross-spawn')
 var cl = require('chalkline');
 var chalk = require('chalk');
-var ProgressBar = require('ascii-progress');
 var sanitize = require('sanitize-filename');
 var mkdirp = require('mkdirp');
 var cnst = require('constants');
@@ -24,7 +23,8 @@ var args = require('minimist')(process.argv.slice(2), {
     compiler: 'c',
     port: 'p'
   },
-  string: [ 'compiler', 'port' ]
+  string: [ 'compiler', 'port' ],
+	boolean: [ 'dot' ]
 })
 
 if (args.version) {
@@ -43,7 +43,8 @@ if (args.help) {
   console.log('  -V, --version', ' output the version number')
   console.log('  -c, --compiler', 'specify which elm-make to use')
   console.log('  -p, --port', '    specify which elm port to use')
-  console.log('')
+	console.log('  -p, --port', '    specify which elm port to use')
+  console.log('  --dot','          dot reporter')
   process.exit(0)
 }
 
@@ -124,8 +125,11 @@ function run(outputPath) {
   return new Promise(function (resolve, reject) {
     var runner = worker(require(outputPath))
     var port = getPort(runner)
+		var dot = args.dot
 
     var context = {
+			dot: dot,
+      statuses: [],
       statusBars: {},
       summaries: {},
       defaultSchema: "\n:name.magenta\n :bar.green :current/:total (:percent)\n:executing",
@@ -202,15 +206,19 @@ function getPort(elmInstance) {
 // First display of a run
 function onStatus(context, statuses) {
   statuses.forEach(function (status) {
-    context.statusBars[status.name] = new ProgressBar({
-      schema: context.defaultSchema,
-      total : status.value.total
-    });
+    context.statuses.push(status.name)
+    if (!context.dot) {
+      var ProgressBar = require('ascii-progress');
+      context.statusBars[status.name] = new ProgressBar({
+        schema: context.defaultSchema,
+        total : status.value.total
+      });
 
-    context.statusBars[status.name].tick(0, {
-      name: status.name,
-      executing: "→ " + status.value.nextStep
-    });
+			context.statusBars[status.name].tick(0, {
+				name: status.name,
+				executing: "→ " + status.value.nextStep
+			});
+		}
   });
 }
 
@@ -219,23 +227,27 @@ function onStatus(context, statuses) {
 function onStatusUpdate(context, statuses) {
   statuses
     .filter(function (status) {
-      return typeof context.statusBars[status.name] !== 'undefined';
+      return context.statuses.includes(status.name);
     })
     .forEach(function (status) {
-      var bar = context.statusBars[status.name];
-      var ticks =  (status.value.total - status.value.remaining) - bar.current;
+			if (context.dot) {
+				printDot(status)
+			} else {
+				var bar = context.statusBars[status.name];
+				var ticks =  (status.value.total - status.value.remaining) - bar.current;
 
-      if (status.value.failed) {
-        bar.setSchema(context.defaultSchema.replace(':bar.green', ':bar.red'), {
-          name: status.name,
-          executing: "→ " + status.value.nextStep
-        });
-      }
+				if (status.value.failed) {
+					bar.setSchema(context.defaultSchema.replace(':bar.green', ':bar.red'), {
+						name: status.name,
+						executing: "→ " + status.value.nextStep
+					});
+				}
 
-      bar.tick(ticks, {
-        name: status.name,
-        executing: "→ " + status.value.nextStep
-      });
+				bar.tick(ticks, {
+					name: status.name,
+					executing: "→ " + status.value.nextStep
+				});
+			}
     });
 }
 
@@ -265,8 +277,8 @@ function onScreenshots(context, data) {
 // Terminate process
 // Return true if all run succeeded, false otherwise
 function onExit(context, summary) {
-  for (name in context.statusBars) {
-    printSummary(context.summaries[name]);
+  for (name in context.summaries) {
+    printSummary(context.summaries[name], context.dot);
   }
 
   var bg = summary.failed == 0 ? chalk.bgGreen : chalk.bgRed;
@@ -277,16 +289,31 @@ function onExit(context, summary) {
 
 
 // Print with style a summary
-function printSummary(summary) {
+function printSummary(summary, dot) {
   var name = summary.name;
   var summary = summary.value;
-  var fn = summary.failed > 0 ? cl.red : cl.green;
-
 
   console.log("\n\n");
-  fn();
-  console.log(name);
-  fn();
+	if (dot) {
+		var fn = summary.failed > 0 ? chalk.bgRed : chalk.bgGreen;
+		console.log(fn(name));
+	} else {
+		var fn = summary.failed > 0 ? cl.red : cl.green;
+		fn();
+		console.log(name);
+		fn();
+	}
 
   console.log(summary.output);
+}
+
+// Print a dot depending on status
+function printDot(status) {
+	var symbol = status.value.failed ? 'F':'.'
+	process.stdout.write(color(status.value.failed, symbol));
+}
+
+function color(fail, symbol) {
+  var col = fail ? 31 : 32;
+  return `\u001b[${col}m${symbol}\u001b[0m`
 }

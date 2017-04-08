@@ -13,7 +13,7 @@ main =
 
 firstLink_ : String
 firstLink_ =
-    "div#rso > div:nth-child(1) > div:nth-child(1) > div > div > h3 > a"
+  "div.g:nth-child(1) > div:nth-child(1) > h3:nth-child(1) > a:nth-child(1)"
 
 searchElm : Run
 searchElm =
