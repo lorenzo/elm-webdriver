@@ -18,6 +18,7 @@
   },
   "scripts": {
     "test": "./bin/elm-webdriver.js ./example/Main.elm",
+		"dotTest": "./bin/elm-webdriver.js --dot ./example/Main.elm",
     "help": "./bin/elm-webdriver.js --help",
     "version": "./bin/elm-webdriver.js --version"
   },
