@@ -417,6 +417,24 @@ var _nomalab$elm_webdriver$Native_Webdriver = function() {
     });
   }
 
+  function chooseFile(selector, localPath, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.chooseFile(selector, localPath), {selector: selector});
+    });
+  }
+
+  function buttonUp(button, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.buttonUp(button), {});
+    });
+  }
+
+  function buttonDown(button, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.buttonDown(button), {});
+    });
+  }
+
   function handleError(error, callback, context) {
     var tag = {
       ctor: "UnknownError",
@@ -504,6 +522,9 @@ var _nomalab$elm_webdriver$Native_Webdriver = function() {
     getLocationInView: F2(getLocationInView),
     countElements: F2(countElements),
     customCommand: F3(customCommand),
-    executeScriptArity0: F2(executeScriptArity0)
+    executeScriptArity0: F2(executeScriptArity0),
+    chooseFile: F3(chooseFile),
+    buttonUp: F2(buttonUp),
+    buttonDown: F2(buttonDown)
   };
 }();

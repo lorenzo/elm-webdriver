@@ -4,6 +4,7 @@ module Webdriver.LowLevel
         , Options
         , Capabilities
         , Error(..)
+        , Button(..)
         , open
         , url
         , click
@@ -66,17 +67,20 @@ module Webdriver.LowLevel
         , countElements
         , customCommand
         , executeScriptArity0
+        , chooseFile
+        , buttonUp
+        , buttonDown
         )
 
 {-| Offers access to the webdriver.io js library
 
 ## Types
 
-@docs Error, Browser, Options, Capabilities
+@docs Error, Browser, Options, Capabilities, Button
 
 ## Navigation
 
-@docs open, url, click, moveTo, moveToWithOffset, close, end, switchToFrame
+@docs open, url, click, moveTo, moveToWithOffset, close, end, switchToFrame, buttonUp, buttonDown
 
 # Forms
 
@@ -100,7 +104,7 @@ module Webdriver.LowLevel
 
 ## Utilities
 
-@docs countElements, triggerClick
+@docs countElements, triggerClick, executeScriptArity0, chooseFile
 
 ## Debugging
 
@@ -176,6 +180,17 @@ type alias ErrorDetails a =
         , message : String
     }
 
+{-| Mouse Button
+-}
+type Button =
+  Left | Middle | Right
+
+buttonToInt : Button -> Int
+buttonToInt button =
+  case button of
+    Left -> 0
+    Middle -> 1
+    Right -> 2
 
 {-| Opens a new browser window
 -}
@@ -635,6 +650,26 @@ customCommand : String -> List Value -> Browser -> Task Error Value
 customCommand =
     Native.Webdriver.customCommand
 
+{-| Allows the execution of any JS returning nothing
+-}
 executeScriptArity0 : String -> Browser -> Task Error Value
 executeScriptArity0 =
    Native.Webdriver.executeScriptArity0
+
+{-| Upload local file to selenium server
+-}
+chooseFile : String -> String -> Browser -> Task Error Value
+chooseFile =
+  Native.Webdriver.chooseFile
+
+{-| mouse button Up action
+-}
+buttonUp : Button -> Browser -> Task Error Value
+buttonUp button =
+  Native.Webdriver.buttonUp (buttonToInt button)
+
+{-| mouse button Down action
+-}
+buttonDown : Button -> Browser -> Task Error Value
+buttonDown button =
+  Native.Webdriver.buttonDown (buttonToInt button)
