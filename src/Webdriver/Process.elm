@@ -635,6 +635,9 @@ processStep step browser =
         Close ->
             Wd.close browser
 
+        WindowResize width height ->
+            Wd.windowResize width height browser
+
 
 toMessage : Result Msg Msg -> Msg
 toMessage task =

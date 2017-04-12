@@ -112,7 +112,7 @@ type UnitStep
     | TriggerClick Selector
     | Close
     | End
-
+    | WindowResize Int Int
 
 type StringStep
     = GetUrl

@@ -435,6 +435,12 @@ var _nomalab$elm_webdriver$Native_Webdriver = function() {
     });
   }
 
+  function windowResize(width, height, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.windowHandleSize({width: width, height: height}), {});
+    });
+  }
+
   function handleError(error, callback, context) {
     var tag = {
       ctor: "UnknownError",
@@ -525,6 +531,7 @@ var _nomalab$elm_webdriver$Native_Webdriver = function() {
     executeScriptArity0: F2(executeScriptArity0),
     chooseFile: F3(chooseFile),
     buttonUp: F2(buttonUp),
-    buttonDown: F2(buttonDown)
+    buttonDown: F2(buttonDown),
+    windowResize: F3(windowResize)
   };
 }();

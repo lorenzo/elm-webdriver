@@ -70,6 +70,7 @@ module Webdriver.LowLevel
         , chooseFile
         , buttonUp
         , buttonDown
+        , windowResize
         )
 
 {-| Offers access to the webdriver.io js library
@@ -104,7 +105,7 @@ module Webdriver.LowLevel
 
 ## Utilities
 
-@docs countElements, triggerClick, executeScriptArity0, chooseFile
+@docs countElements, triggerClick, executeScriptArity0, chooseFile, windowResize
 
 ## Debugging
 
@@ -652,24 +653,30 @@ customCommand =
 
 {-| Allows the execution of any JS returning nothing
 -}
-executeScriptArity0 : String -> Browser -> Task Error Value
+executeScriptArity0 : String -> Browser -> Task Error ()
 executeScriptArity0 =
    Native.Webdriver.executeScriptArity0
 
 {-| Upload local file to selenium server
 -}
-chooseFile : String -> String -> Browser -> Task Error Value
+chooseFile : String -> String -> Browser -> Task Error ()
 chooseFile =
   Native.Webdriver.chooseFile
 
 {-| mouse button Up action
 -}
-buttonUp : Button -> Browser -> Task Error Value
+buttonUp : Button -> Browser -> Task Error ()
 buttonUp button =
   Native.Webdriver.buttonUp (buttonToInt button)
 
 {-| mouse button Down action
 -}
-buttonDown : Button -> Browser -> Task Error Value
+buttonDown : Button -> Browser -> Task Error ()
 buttonDown button =
   Native.Webdriver.buttonDown (buttonToInt button)
+
+{-| Resize window
+-}
+windowResize : Int -> Int -> Browser -> Task Error ()
+windowResize =
+  Native.Webdriver.windowResize

@@ -42,6 +42,7 @@ module Webdriver
         , savePageScreenshot
         , switchToFrame
         , triggerClick
+        , windowResize
         )
 
 {-| A library to interface with Webdriver.io and produce commands to control a browser
@@ -56,7 +57,7 @@ browser.
 
 ## Simple Browser Control
 
-@docs visit, click, moveTo, moveToWithOffset, close, end, switchToFrame
+@docs visit, click, moveTo, moveToWithOffset, close, end, switchToFrame, windowResize
 
 ## Forms
 
@@ -494,3 +495,10 @@ waitForDebug =
 toSeconds : Int -> String
 toSeconds ms =
     (toString <| toFloat ms / 1000) ++ "s"
+
+{-| Resize the current browser window
+-}
+windowResize : Int -> Int -> Step
+windowResize width height =
+    WindowResize width height
+        |> toUnitStep ("Resize window to width: " ++ (toString width) ++ " and height: " ++ (toString height))
