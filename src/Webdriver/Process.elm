@@ -638,6 +638,9 @@ processStep step browser =
         WindowResize width height ->
             Wd.windowResize width height browser
 
+        Keys key ->
+            Wd.keys key browser
+
 
 toMessage : Result Msg Msg -> Msg
 toMessage task =

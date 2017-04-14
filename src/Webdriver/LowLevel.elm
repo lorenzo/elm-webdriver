@@ -5,6 +5,8 @@ module Webdriver.LowLevel
         , Capabilities
         , Error(..)
         , Button(..)
+        , Key(..)
+        , keyToString
         , open
         , url
         , click
@@ -71,13 +73,14 @@ module Webdriver.LowLevel
         , buttonUp
         , buttonDown
         , windowResize
+        , keys
         )
 
 {-| Offers access to the webdriver.io js library
 
 ## Types
 
-@docs Error, Browser, Options, Capabilities, Button
+@docs Error, Browser, Options, Capabilities, Button, Key
 
 ## Navigation
 
@@ -105,7 +108,7 @@ module Webdriver.LowLevel
 
 ## Utilities
 
-@docs countElements, triggerClick, executeScriptArity0, chooseFile, windowResize
+@docs countElements, triggerClick, executeScriptArity0, chooseFile, windowResize, keys, keyToString
 
 ## Debugging
 
@@ -192,6 +195,19 @@ buttonToInt button =
     Left -> 0
     Middle -> 1
     Right -> 2
+
+{-| Name of keys
+-}
+type Key =
+  ArrowDown | Enter
+
+{-| toString implementation for Key
+-}
+keyToString : Key -> String
+keyToString key =
+  case key of
+    ArrowDown -> "ArrowDown"
+    Enter -> "Enter"
 
 {-| Opens a new browser window
 -}
@@ -680,3 +696,9 @@ buttonDown button =
 windowResize : Int -> Int -> Browser -> Task Error ()
 windowResize =
   Native.Webdriver.windowResize
+
+{-| Input one key
+-}
+keys: List Key -> Browser -> Task Error ()
+keys keys =
+  Native.Webdriver.keys (List.map keyToString keys)
