@@ -112,7 +112,8 @@ type UnitStep
     | TriggerClick Selector
     | Close
     | End
-
+    | WindowResize Int Int
+    | Keys (List Wd.Key)
 
 type StringStep
     = GetUrl

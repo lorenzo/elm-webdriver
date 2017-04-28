@@ -42,6 +42,8 @@ module Webdriver
         , savePageScreenshot
         , switchToFrame
         , triggerClick
+        , windowResize
+        , keys
         )
 
 {-| A library to interface with Webdriver.io and produce commands to control a browser
@@ -56,7 +58,7 @@ browser.
 
 ## Simple Browser Control
 
-@docs visit, click, moveTo, moveToWithOffset, close, end, switchToFrame
+@docs visit, click, moveTo, moveToWithOffset, close, end, switchToFrame, windowResize, keys
 
 ## Forms
 
@@ -494,3 +496,17 @@ waitForDebug =
 toSeconds : Int -> String
 toSeconds ms =
     (toString <| toFloat ms / 1000) ++ "s"
+
+{-| Resize the current browser window
+-}
+windowResize : Int -> Int -> Step
+windowResize width height =
+    WindowResize width height
+        |> toUnitStep ("Resize window to width: " ++ (toString width) ++ " and height: " ++ (toString height))
+
+{-| Input key
+-}
+keys : List Wd.Key -> Step
+keys keys =
+  Keys keys
+    |> toUnitStep ("Input keys: " ++ (List.foldl (\s1 s2 -> s1 ++ " " ++ s2) "" <| List.map Wd.keyToString keys))

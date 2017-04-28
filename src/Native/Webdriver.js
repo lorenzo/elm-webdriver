@@ -8,6 +8,7 @@ var _nomalab$elm_webdriver$Native_Webdriver = function() {
   var fail = _elm_lang$core$Native_Scheduler.fail;
   var tuple2 = _elm_lang$core$Native_Utils.Tuple2;
   var unit = {ctor: '_Tuple0'};
+  var arrayFromList = _elm_lang$core$Native_List.toArray;
 
 	function requireWebdriverio(cwd) {
 		try {
@@ -411,6 +412,42 @@ var _nomalab$elm_webdriver$Native_Webdriver = function() {
     });
   }
 
+  function executeScriptArity0(script, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.execute(script), {});
+    });
+  }
+
+  function chooseFile(selector, localPath, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.chooseFile(selector, localPath), {selector: selector});
+    });
+  }
+
+  function buttonUp(button, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.buttonUp(button), {});
+    });
+  }
+
+  function buttonDown(button, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.buttonDown(button), {});
+    });
+  }
+
+  function windowResize(width, height, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.windowHandleSize({width: width, height: height}), {});
+    });
+  }
+
+  function keys(keys, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.keys(arrayFromList(keys)), {});
+    });
+  }
+
   function handleError(error, callback, context) {
     var tag = {
       ctor: "UnknownError",
@@ -497,6 +534,12 @@ var _nomalab$elm_webdriver$Native_Webdriver = function() {
     getLocation: F2(getLocation),
     getLocationInView: F2(getLocationInView),
     countElements: F2(countElements),
-    customCommand: F3(customCommand)
+    customCommand: F3(customCommand),
+    executeScriptArity0: F2(executeScriptArity0),
+    chooseFile: F3(chooseFile),
+    buttonUp: F2(buttonUp),
+    buttonDown: F2(buttonDown),
+    windowResize: F3(windowResize),
+    keys: F2(keys)
   };
 }();
