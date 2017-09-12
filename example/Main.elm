@@ -26,7 +26,7 @@ searchElm =
         , title <| Expect.equal "DuckDuckGo"
         , elementCount "input[name='q']" <| Expect.atLeast 1
         , setValue "input[name='q']" "Elm lang"
-        , submitForm "#search_form_homepage"
+        , click "#search_button_homepage"
         , waitForExist firstLink_ 2000
         , elementText firstLink_ <| Expect.equal "Elm"
         , click firstLink_
@@ -44,7 +44,7 @@ searchHackerNews =
         , title <| Expect.equal "This is not the real title"
         , elementCount "input[name='q']" <| Expect.atLeast 1
         , setValue "input[name='q']" "Hacker News"
-        , submitForm "#search_form_homepage"
+        , click "#search_button_homepage"
         , waitForExist firstLink_ 2000
         , elementText firstLink_ <| Expect.equal "Not the real title"
         , click firstLink_

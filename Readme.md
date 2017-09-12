@@ -5,6 +5,8 @@ Remote control a browser with selenium, in Elm!
 This can be used as a testing suite or you can utilize the exposed
 API for adapting it to your own use case.
 
+[![asciicast](https://asciinema.org/a/ubtn5N0GIhSu0HgcO6UPnA9DD.png)](https://asciinema.org/a/ubtn5N0GIhSu0HgcO6UPnA9DD)
+
 ## Quick Start
 
 Since this package contains a `Native` module (some javascript), this cannot be published in
