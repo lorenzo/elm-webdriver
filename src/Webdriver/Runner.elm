@@ -1,4 +1,4 @@
-port module Webdriver.Runner
+module Webdriver.Runner
     exposing
         ( Model
         , Run
@@ -7,6 +7,7 @@ port module Webdriver.Runner
         , RunStatus
         , Summary
         , WebdriverRunner
+        , PortEvent
         , run
         , describe
         , group
@@ -17,9 +18,11 @@ of each of the runs. This module acts as a test suite runner, but can be reused 
 other purpose as it will just run each of the steps at a time and report back the status
 using a port and through the Summary type alias.
 
+
 ## Types
 
-@docs Model, Run, Msg, Flags, RunStatus, Summary, WebdriverRunner
+@docs Model, Run, Msg, Flags, RunStatus, Summary, WebdriverRunner, PortEvent
+
 
 ## Creating runs and groups of runs
 
@@ -27,6 +30,7 @@ In order to run a list of steps you need to give the a name. You can also group 
 inside groups.
 
 @docs describe, group
+
 
 ## Kicking it off
 
@@ -36,10 +40,10 @@ inside groups.
 
 import Dict exposing (Dict)
 import Expect
-import String
 import Time exposing (Time)
 import Task
 import Tuple exposing (first, second)
+import Json.Encode as Encode
 import Webdriver as W exposing (..)
 import Webdriver.Assert exposing (..)
 import Webdriver.Process as P exposing (Model, OutMsg(..), StepResult(..))
@@ -48,6 +52,61 @@ import Webdriver.Process as P exposing (Model, OutMsg(..), StepResult(..))
 -- Required to prevent a bug in elm  0.18
 
 import Json.Decode
+
+
+{-| The events send through the port
+-}
+type alias PortEvent =
+    { name : String, value : Encode.Value }
+
+
+type alias Emitter evt msg =
+    evt -> Cmd msg
+
+
+type alias ExternalEmitter =
+    Emitter PortEvent Msg
+
+
+type alias InternalEmitter =
+    Emitter Event Msg
+
+
+type Event
+    = Status (List ( String, RunStatus ))
+    | StatusUpdate (List ( String, RunStatus ))
+    | Screenshots String (List String)
+    | Log String Summary
+    | Exit Summary
+
+
+toPort : Event -> PortEvent
+toPort event =
+    case event of
+        Status list ->
+            list
+                |> List.map (\( name, sts ) -> Encode.object [ ( "name", Encode.string name ), ( "value", encodeRunStatus sts ) ])
+                |> Encode.list
+                |> PortEvent "status"
+
+        StatusUpdate list ->
+            list
+                |> List.map (\( name, sts ) -> Encode.object [ ( "name", Encode.string name ), ( "value", encodeRunStatus sts ) ])
+                |> Encode.list
+                |> PortEvent "statusUpdate"
+
+        Screenshots runName screenshots ->
+            [ ( "name", Encode.string runName ), ( "shots", Encode.list <| List.map Encode.string screenshots ) ]
+                |> Encode.object
+                |> PortEvent "screenshots"
+
+        Log runName summary ->
+            [ ( "name", Encode.string runName ), ( "value", encodeSummary summary ) ]
+                |> Encode.object
+                |> PortEvent "log"
+
+        Exit summary ->
+            PortEvent "exit" (encodeSummary summary)
 
 
 {-| The model used for concurrently running multiple lists of steps
@@ -74,10 +133,34 @@ type alias RunStatus =
     }
 
 
+encodeRunStatus : RunStatus -> Encode.Value
+encodeRunStatus status =
+    Encode.object
+        [ ( "failed", Encode.bool status.failed )
+        , ( "total", Encode.int status.total )
+        , ( "remaining", Encode.int status.remaining )
+        , ( "nextStep", Encode.string status.nextStep )
+        ]
+
+
 {-| Represents the final result of a single run or a group of runs.
 -}
 type alias Summary =
-    { output : String, passed : Int, failed : Int, screenshots : List String }
+    { output : String
+    , passed : Int
+    , failed : Int
+    , screenshots : List String
+    }
+
+
+encodeSummary : Summary -> Encode.Value
+encodeSummary summary =
+    Encode.object
+        [ ( "output", Encode.string summary.output )
+        , ( "passed", Encode.int summary.passed )
+        , ( "failed", Encode.int summary.failed )
+        , ( "screenshots", Encode.list <| List.map Encode.string summary.screenshots )
+        ]
 
 
 type alias SingleRun =
@@ -96,6 +179,7 @@ type Run
 by name:
 
     - filter: A string to match against the run name. Only matching runs will execute.
+
 -}
 type alias Flags =
     { filter : Maybe String
@@ -110,18 +194,23 @@ type alias WebdriverRunner =
 
 {-| Runs all the webdriver steps and displays the results
 -}
-run : Options -> Run -> WebdriverRunner
-run options steps =
-    Platform.programWithFlags
-        { init = begin options steps
-        , update = update
-        , subscriptions = always Sub.none
-        }
+run : ExternalEmitter -> Options -> Run -> WebdriverRunner
+run emitter options steps =
+    let
+        emit =
+            toPort >> emitter
+    in
+        Platform.programWithFlags
+            { init = begin emit options steps
+            , update = update emit
+            , subscriptions = always Sub.none
+            }
 
 
 {-| Describes with a name a list of steps to be executed
 
     describe "Login smoke test" [...]
+
 -}
 describe : String -> SingleRun -> Run
 describe name list =
@@ -134,6 +223,7 @@ describe name list =
         [ describe "Login Tests" [...]
         , describe "Signup Tests" [...]
         ]
+
 -}
 group : String -> List Run -> Run
 group name list =
@@ -148,11 +238,13 @@ type Msg
     | StartedRun String Time
     | StopRun String Summary Time
     | DriverMsg String P.Msg
+    | Done Summary
 
 
 {-| Creates a new empty Model.
 
     initModel browserOptions (describe "All Tests" [...])
+
 -}
 initModel : Options -> Run -> Model
 initModel options runs =
@@ -186,20 +278,21 @@ a Run suite. This is usually the function you will call to feed your
 main program.
 
     begin flags browserOptions (describe "All Tests" [...])
+
 -}
-begin : Options -> Run -> Flags -> ( Model, Cmd Msg )
-begin options steps flags =
-    update (Begin flags) (initModel options steps)
+begin : InternalEmitter -> Options -> Run -> Flags -> ( Model, Cmd Msg )
+begin emit options steps flags =
+    update emit (Begin flags) (initModel options steps)
 
 
 {-| Starts the browser sessions and executes all the steps. Finally, it displays a sumamry
 of the run with the help of a port.
 -}
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : InternalEmitter -> Msg -> Model -> ( Model, Cmd Msg )
+update emit msg model =
     case msg of
         Begin flags ->
-            dispatchTests flags.filter model
+            dispatchTests emit flags.filter model
 
         StartRun i cmd initTime ->
             let
@@ -218,7 +311,7 @@ update msg model =
         DriverMsg i action ->
             case Dict.get i model.sessions of
                 Just subModel ->
-                    delegateMessage i action subModel model
+                    delegateMessage emit i action subModel model
 
                 _ ->
                     ( model, Cmd.none )
@@ -256,15 +349,19 @@ update msg model =
 
                 terminate =
                     if Dict.isEmpty model.sessions then
-                        exit <| exitOutput model.summary (firstTime stopTime) stopTime
+                        Task.succeed (exitOutput model.summary (firstTime stopTime) stopTime)
+                            |> Task.perform Done
                     else
                         Cmd.none
             in
-                ( model, Cmd.batch [ printLog ( runName, outputWithTime ), terminate ] )
+                ( model, Cmd.batch [ emit <| Log runName outputWithTime, terminate ] )
+
+        Done summary ->
+            model ! [ emit <| Exit summary ]
 
 
-dispatchTests : Maybe String -> Model -> ( Model, Cmd Msg )
-dispatchTests filterString model =
+dispatchTests : InternalEmitter -> Maybe String -> Model -> ( Model, Cmd Msg )
+dispatchTests emit filterString model =
     let
         filter =
             filterString
@@ -285,7 +382,7 @@ dispatchTests filterString model =
             newModel.statuses
                 |> Dict.toList
     in
-        ( newModel, Cmd.batch <| (emitStatus statuses) :: (second nextState) )
+        ( newModel, Cmd.batch <| (emit <| Status statuses) :: (second nextState) )
 
 
 {-| Compacts a list of named steps into an already provided Model and list of commands.
@@ -341,8 +438,8 @@ flattenRuns result suite =
             ( name, steps ) :: result
 
 
-delegateMessage : String -> P.Msg -> P.Model -> Model -> ( Model, Cmd Msg )
-delegateMessage runName action subModel thisModel =
+delegateMessage : InternalEmitter -> String -> P.Msg -> P.Model -> Model -> ( Model, Cmd Msg )
+delegateMessage emit runName action subModel thisModel =
     let
         ( session, next, progressMessage ) =
             P.update action subModel
@@ -366,19 +463,19 @@ delegateMessage runName action subModel thisModel =
                     )
 
                 Progress remaining result nextStep ->
-                    updateStatus runName updatedModel remaining result nextStep
+                    updateStatus emit runName updatedModel remaining result nextStep
 
                 None ->
                     ( updatedModel, Cmd.none )
 
                 Finalized ->
-                    endSummary runName updatedModel subModel
+                    endSummary emit runName updatedModel subModel
     in
         ( newModel, Cmd.batch [ reportCommands, subCommand ] )
 
 
-updateStatus : String -> Model -> Int -> StepResult -> String -> ( Model, Cmd Msg )
-updateStatus runName thisModel remaining result nextStep =
+updateStatus : InternalEmitter -> String -> Model -> Int -> StepResult -> String -> ( Model, Cmd Msg )
+updateStatus emit runName thisModel remaining result nextStep =
     let
         summaries =
             Dict.update runName (Maybe.map (updateSummary result)) thisModel.summaries
@@ -401,11 +498,11 @@ updateStatus runName thisModel remaining result nextStep =
         newModel =
             { thisModel | statuses = newStatuses, summaries = summaries }
     in
-        ( newModel, emitStatusUpdate (Dict.toList newStatuses) )
+        ( newModel, emit <| StatusUpdate (Dict.toList newStatuses) )
 
 
-endSummary : String -> Model -> P.Model -> ( Model, Cmd Msg )
-endSummary runName thisModel subModel =
+endSummary : InternalEmitter -> String -> Model -> P.Model -> ( Model, Cmd Msg )
+endSummary emit runName thisModel subModel =
     let
         runSummary =
             Dict.get runName thisModel.summaries
@@ -439,7 +536,7 @@ endSummary runName thisModel subModel =
                 |> Task.perform identity
 
         persistScreenshots =
-            emitScreenshots ( runName, runSummary.screenshots )
+            emit <| Screenshots runName runSummary.screenshots
     in
         ( newModel, Cmd.batch [ signalStop, persistScreenshots ] )
 
@@ -529,22 +626,3 @@ exitOutput summary startTime endTime =
 never : Never -> a
 never a =
     never a
-
-
-
--- PORTS
-
-
-port emitStatus : List ( String, RunStatus ) -> Cmd msg
-
-
-port emitScreenshots : ( String, List String ) -> Cmd msg
-
-
-port emitStatusUpdate : List ( String, RunStatus ) -> Cmd msg
-
-
-port printLog : ( String, Summary ) -> Cmd msg
-
-
-port exit : Summary -> Cmd msg

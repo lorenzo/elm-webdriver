@@ -1,12 +1,28 @@
-var webdriverio = require('webdriverio');
-
 var _lorenzo$elm_webdriver$Native_Webdriver = function() {
+  var path = require('path');
+  var fs = require('fs');
+  var webdriverio = requireWebdriverio(process.cwd());
 
   var nativeBinding = _elm_lang$core$Native_Scheduler.nativeBinding;
   var succeed = _elm_lang$core$Native_Scheduler.succeed;
   var fail = _elm_lang$core$Native_Scheduler.fail;
   var tuple2 = _elm_lang$core$Native_Utils.Tuple2;
   var unit = {ctor: '_Tuple0'};
+  var arrayFromList = _elm_lang$core$Native_List.toArray;
+
+	function requireWebdriverio(cwd) {
+		try {
+			fs.accessSync(path.join(cwd, 'node_modules'));
+			return require(path.resolve(cwd, 'node_modules', 'webdriverio'));
+		} catch (e) {
+			var lastSlashIndex = cwd.lastIndexOf('/');
+      if (e.code === 'MODULE_NOT_FOUND' || lastSlashIndex === 0) {
+        throw e;
+			}
+			var previousDir = cwd.slice(0, lastSlashIndex);
+      return requireWebdriverio(previousDir);
+		}
+	}
 
   function catchPromise(callback, context, promise) {
       return promise.catch(function (error) {
@@ -396,6 +412,42 @@ var _lorenzo$elm_webdriver$Native_Webdriver = function() {
     });
   }
 
+  function executeScriptArity0(script, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.execute(script), {});
+    });
+  }
+
+  function chooseFile(selector, localPath, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.chooseFile(selector, localPath), {selector: selector});
+    });
+  }
+
+  function buttonUp(button, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.buttonUp(button), {});
+    });
+  }
+
+  function buttonDown(button, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.buttonDown(button), {});
+    });
+  }
+
+  function windowResize(width, height, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.windowHandleSize({width: width, height: height}), {});
+    });
+  }
+
+  function keys(keys, client) {
+    return nativeBinding(function (c) {
+      unitReturningExecute(c, client.keys(arrayFromList(keys)), {});
+    });
+  }
+
   function handleError(error, callback, context) {
     var tag = {
       ctor: "UnknownError",
@@ -482,6 +534,12 @@ var _lorenzo$elm_webdriver$Native_Webdriver = function() {
     getLocation: F2(getLocation),
     getLocationInView: F2(getLocationInView),
     countElements: F2(countElements),
-    customCommand: F3(customCommand)
+    customCommand: F3(customCommand),
+    executeScriptArity0: F2(executeScriptArity0),
+    chooseFile: F3(chooseFile),
+    buttonUp: F2(buttonUp),
+    buttonDown: F2(buttonDown),
+    windowResize: F3(windowResize),
+    keys: F2(keys)
   };
 }();

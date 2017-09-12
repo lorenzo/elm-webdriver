@@ -4,6 +4,9 @@ module Webdriver.LowLevel
         , Options
         , Capabilities
         , Error(..)
+        , Button(..)
+        , Key(..)
+        , keyToString
         , open
         , url
         , click
@@ -65,17 +68,23 @@ module Webdriver.LowLevel
         , cookieExists
         , countElements
         , customCommand
+        , executeScriptArity0
+        , chooseFile
+        , buttonUp
+        , buttonDown
+        , windowResize
+        , keys
         )
 
 {-| Offers access to the webdriver.io js library
 
 ## Types
 
-@docs Error, Browser, Options, Capabilities
+@docs Error, Browser, Options, Capabilities, Button, Key
 
 ## Navigation
 
-@docs open, url, click, moveTo, moveToWithOffset, close, end, switchToFrame
+@docs open, url, click, moveTo, moveToWithOffset, close, end, switchToFrame, buttonUp, buttonDown
 
 # Forms
 
@@ -99,7 +108,7 @@ module Webdriver.LowLevel
 
 ## Utilities
 
-@docs countElements, triggerClick
+@docs countElements, triggerClick, executeScriptArity0, chooseFile, windowResize, keys, keyToString
 
 ## Debugging
 
@@ -175,6 +184,30 @@ type alias ErrorDetails a =
         , message : String
     }
 
+{-| Mouse Button
+-}
+type Button =
+  Left | Middle | Right
+
+buttonToInt : Button -> Int
+buttonToInt button =
+  case button of
+    Left -> 0
+    Middle -> 1
+    Right -> 2
+
+{-| Name of keys
+-}
+type Key =
+  ArrowDown | Enter
+
+{-| toString implementation for Key
+-}
+keyToString : Key -> String
+keyToString key =
+  case key of
+    ArrowDown -> "ArrowDown"
+    Enter -> "Enter"
 
 {-| Opens a new browser window
 -}
@@ -633,3 +666,39 @@ of the comand coms as a Json.Encode.Value.
 customCommand : String -> List Value -> Browser -> Task Error Value
 customCommand =
     Native.Webdriver.customCommand
+
+{-| Allows the execution of any JS returning nothing
+-}
+executeScriptArity0 : String -> Browser -> Task Error ()
+executeScriptArity0 =
+   Native.Webdriver.executeScriptArity0
+
+{-| Upload local file to selenium server
+-}
+chooseFile : String -> String -> Browser -> Task Error ()
+chooseFile =
+  Native.Webdriver.chooseFile
+
+{-| mouse button Up action
+-}
+buttonUp : Button -> Browser -> Task Error ()
+buttonUp button =
+  Native.Webdriver.buttonUp (buttonToInt button)
+
+{-| mouse button Down action
+-}
+buttonDown : Button -> Browser -> Task Error ()
+buttonDown button =
+  Native.Webdriver.buttonDown (buttonToInt button)
+
+{-| Resize window
+-}
+windowResize : Int -> Int -> Browser -> Task Error ()
+windowResize =
+  Native.Webdriver.windowResize
+
+{-| Input one key
+-}
+keys: List Key -> Browser -> Task Error ()
+keys keys =
+  Native.Webdriver.keys (List.map keyToString keys)

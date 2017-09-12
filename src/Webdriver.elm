@@ -42,6 +42,8 @@ module Webdriver
         , savePageScreenshot
         , switchToFrame
         , triggerClick
+        , windowResize
+        , keys
         )
 
 {-| A library to interface with Webdriver.io and produce commands to control a browser
@@ -50,45 +52,56 @@ using selenium.
 The functions exposed in this module are commands that produce no result back from the
 browser.
 
+
 ## Basics
 
 @docs basicOptions, Options, Step, stepName, withName
 
+
 ## Simple Browser Control
 
-@docs visit, click, moveTo, moveToWithOffset, close, end, switchToFrame
+@docs visit, click, moveTo, moveToWithOffset, close, end, switchToFrame, windowResize, keys
+
 
 ## Forms
 
 @docs setValue, appendValue, clearValue, submitForm, selectByIndex, selectByValue, selectByText, selectByAttribute
 
+
 ## Waiting For Elements
 
 @docs waitForExist, waitForNotExist, waitForVisible, waitForNotVisible, waitForText, waitForNoText, pause
 
+
 ## Waiting For Form Elements
 
-@docs  waitForValue, waitForNoValue, waitForSelected, waitForNotSelected, waitForEnabled, waitForNotEnabled
+@docs waitForValue, waitForNoValue, waitForSelected, waitForNotSelected, waitForEnabled, waitForNotEnabled
+
 
 ## Debugging
 
 @docs waitForDebug
 
+
 ## Scrolling
 
 @docs scrollToElement, scrollToElementOffset, scrollWindow
+
 
 ## Cookies
 
 @docs setCookie, deleteCookie
 
+
 ## Screenshots
 
 @docs savePageScreenshot, withScreenshot
 
+
 ## Custom
 
 @docs triggerClick
+
 -}
 
 import Webdriver.LowLevel as Wd exposing (Error, Browser)
@@ -114,6 +127,7 @@ type alias Selector =
 {-| Returns the human readable name of the step
 
     stepName (click "a") === "Click on <a>"
+
 -}
 stepName : Step -> String
 stepName =
@@ -124,6 +138,7 @@ stepName =
 
     click ".login"
         |> withName "Enter the private zone"
+
 -}
 withName : String -> Step -> Step
 withName =
@@ -135,6 +150,7 @@ By default no screenshots are taken.
 
     click ".login"
         |> withScreenshot True
+
 -}
 withScreenshot : Bool -> Step -> Step
 withScreenshot =
@@ -185,6 +201,7 @@ takes two integers (offsetX and offsetY).
 
 If offsetX has a value, move relative to the top-left corner of the element on the X axis
 If offsetY has a value, move relative to the top-left corner of the element on the Y axis
+
 -}
 moveToWithOffset : String -> Int -> Int -> Step
 moveToWithOffset selector xOffset yOffset =
@@ -211,6 +228,7 @@ close =
 {-| Fills in the specified input with the given value
 
     setValue "#email" "foo@bar.com"
+
 -}
 setValue : String -> String -> Step
 setValue selector value =
@@ -222,6 +240,7 @@ setValue selector value =
 
     setValue "#email" "foo"
     addValue "#email" "@bar.com"
+
 -}
 appendValue : String -> String -> Step
 appendValue selector value =
@@ -232,6 +251,7 @@ appendValue selector value =
 {-| Clears the value of the specified input field
 
     clearValue "#email"
+
 -}
 clearValue : String -> Step
 clearValue selector =
@@ -307,7 +327,7 @@ deleteCookie name =
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be present within the DOM
+milliseconds to be present within the DOM
 -}
 waitForExist : String -> Int -> Step
 waitForExist selector timeout =
@@ -316,7 +336,7 @@ waitForExist selector timeout =
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be present absent from the DOM
+milliseconds to be present absent from the DOM
 -}
 waitForNotExist : String -> Int -> Step
 waitForNotExist selector timeout =
@@ -325,7 +345,7 @@ waitForNotExist selector timeout =
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be visible.
+milliseconds to be visible.
 -}
 waitForVisible : String -> Int -> Step
 waitForVisible selector timeout =
@@ -334,7 +354,7 @@ waitForVisible selector timeout =
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be invisible.
+milliseconds to be invisible.
 -}
 waitForNotVisible : String -> Int -> Step
 waitForNotVisible selector timeout =
@@ -343,7 +363,7 @@ waitForNotVisible selector timeout =
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be have a value.
+milliseconds to be have a value.
 -}
 waitForValue : String -> Int -> Step
 waitForValue selector timeout =
@@ -352,7 +372,7 @@ waitForValue selector timeout =
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to have no value.
+milliseconds to have no value.
 -}
 waitForNoValue : String -> Int -> Step
 waitForNoValue selector timeout =
@@ -361,7 +381,7 @@ waitForNoValue selector timeout =
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be selected.
+milliseconds to be selected.
 -}
 waitForSelected : String -> Int -> Step
 waitForSelected selector timeout =
@@ -370,7 +390,7 @@ waitForSelected selector timeout =
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to not be selected.
+milliseconds to not be selected.
 -}
 waitForNotSelected : String -> Int -> Step
 waitForNotSelected selector timeout =
@@ -379,7 +399,7 @@ waitForNotSelected selector timeout =
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be have some text.
+milliseconds to be have some text.
 -}
 waitForText : String -> Int -> Step
 waitForText selector timeout =
@@ -388,7 +408,7 @@ waitForText selector timeout =
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to have no text.
+milliseconds to have no text.
 -}
 waitForNoText : String -> Int -> Step
 waitForNoText selector timeout =
@@ -397,7 +417,7 @@ waitForNoText selector timeout =
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be enabled.
+milliseconds to be enabled.
 -}
 waitForEnabled : String -> Int -> Step
 waitForEnabled selector timeout =
@@ -406,7 +426,7 @@ waitForEnabled selector timeout =
 
 
 {-| Wait for an element (selected by css selector) for the provided amount of
-    milliseconds to be disabled.
+milliseconds to be disabled.
 -}
 waitForNotEnabled : String -> Int -> Step
 waitForNotEnabled selector timeout =
@@ -427,7 +447,7 @@ end =
 pause : Int -> Step
 pause ms =
     Pause ms
-        |> toUnitStep ("Pause the exexution for " ++ (toSeconds ms))
+        |> toUnitStep ("Pause the execution for " ++ (toSeconds ms))
 
 
 {-| Scrolls the window to the element specified in the selector
@@ -494,3 +514,19 @@ waitForDebug =
 toSeconds : Int -> String
 toSeconds ms =
     (toString <| toFloat ms / 1000) ++ "s"
+
+
+{-| Resize the current browser window
+-}
+windowResize : Int -> Int -> Step
+windowResize width height =
+    WindowResize width height
+        |> toUnitStep ("Resize window to width: " ++ (toString width) ++ " and height: " ++ (toString height))
+
+
+{-| Input key
+-}
+keys : List Wd.Key -> Step
+keys keys =
+    Keys keys
+        |> toUnitStep ("Input keys: " ++ (List.foldl (\s1 s2 -> s1 ++ " " ++ s2) "" <| List.map Wd.keyToString keys))
