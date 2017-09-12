@@ -18,9 +18,11 @@ of each of the runs. This module acts as a test suite runner, but can be reused 
 other purpose as it will just run each of the steps at a time and report back the status
 using a port and through the Summary type alias.
 
+
 ## Types
 
 @docs Model, Run, Msg, Flags, RunStatus, Summary, WebdriverRunner, PortEvent
+
 
 ## Creating runs and groups of runs
 
@@ -28,6 +30,7 @@ In order to run a list of steps you need to give the a name. You can also group 
 inside groups.
 
 @docs describe, group
+
 
 ## Kicking it off
 
@@ -53,51 +56,57 @@ import Json.Decode
 
 {-| The events send through the port
 -}
-type alias PortEvent = { name: String, value: Encode.Value }
+type alias PortEvent =
+    { name : String, value : Encode.Value }
 
 
-type alias Emitter evt msg = evt -> Cmd msg
+type alias Emitter evt msg =
+    evt -> Cmd msg
 
-type alias ExternalEmitter = Emitter PortEvent Msg
-type alias InternalEmitter = Emitter Event Msg
+
+type alias ExternalEmitter =
+    Emitter PortEvent Msg
+
+
+type alias InternalEmitter =
+    Emitter Event Msg
 
 
 type Event
-  = Status (List ( String, RunStatus ))
-  | StatusUpdate ( List ( String, RunStatus ) )
-  | Screenshots String (List String)
-  | Log String Summary
-  | Exit Summary
+    = Status (List ( String, RunStatus ))
+    | StatusUpdate (List ( String, RunStatus ))
+    | Screenshots String (List String)
+    | Log String Summary
+    | Exit Summary
 
 
-toPort: Event -> PortEvent
+toPort : Event -> PortEvent
 toPort event =
-  case event of
-    Status list ->
-      list
-      |> List.map (\(name, sts) -> Encode.object [ ("name", Encode.string name), ("value", encodeRunStatus sts) ])
-      |> Encode.list
-      |> PortEvent "status"
+    case event of
+        Status list ->
+            list
+                |> List.map (\( name, sts ) -> Encode.object [ ( "name", Encode.string name ), ( "value", encodeRunStatus sts ) ])
+                |> Encode.list
+                |> PortEvent "status"
 
-    StatusUpdate list ->
-      list
-      |> List.map (\(name, sts) -> Encode.object [ ("name", Encode.string name), ("value", encodeRunStatus sts) ])
-      |> Encode.list
-      |> PortEvent "statusUpdate"
+        StatusUpdate list ->
+            list
+                |> List.map (\( name, sts ) -> Encode.object [ ( "name", Encode.string name ), ( "value", encodeRunStatus sts ) ])
+                |> Encode.list
+                |> PortEvent "statusUpdate"
 
-    Screenshots runName screenshots ->
-      [ ("name", Encode.string runName), ("shots", Encode.list <| List.map Encode.string screenshots) ]
-      |> Encode.object
-      |> PortEvent "screenshots"
+        Screenshots runName screenshots ->
+            [ ( "name", Encode.string runName ), ( "shots", Encode.list <| List.map Encode.string screenshots ) ]
+                |> Encode.object
+                |> PortEvent "screenshots"
 
-    Log runName summary ->
-      [ ("name", Encode.string runName), ("value", encodeSummary summary) ]
-      |> Encode.object
-      |> PortEvent "log"
+        Log runName summary ->
+            [ ( "name", Encode.string runName ), ( "value", encodeSummary summary ) ]
+                |> Encode.object
+                |> PortEvent "log"
 
-    Exit summary ->
-      PortEvent "exit" (encodeSummary summary)
-
+        Exit summary ->
+            PortEvent "exit" (encodeSummary summary)
 
 
 {-| The model used for concurrently running multiple lists of steps
@@ -123,14 +132,15 @@ type alias RunStatus =
     , nextStep : String
     }
 
-encodeRunStatus: RunStatus -> Encode.Value
+
+encodeRunStatus : RunStatus -> Encode.Value
 encodeRunStatus status =
-  Encode.object
-    [ ("failed", Encode.bool status.failed)
-    , ("total", Encode.int status.total)
-    , ("remaining", Encode.int status.remaining)
-    , ("nextStep", Encode.string status.nextStep)
-    ]
+    Encode.object
+        [ ( "failed", Encode.bool status.failed )
+        , ( "total", Encode.int status.total )
+        , ( "remaining", Encode.int status.remaining )
+        , ( "nextStep", Encode.string status.nextStep )
+        ]
 
 
 {-| Represents the final result of a single run or a group of runs.
@@ -142,14 +152,15 @@ type alias Summary =
     , screenshots : List String
     }
 
-encodeSummary: Summary -> Encode.Value
+
+encodeSummary : Summary -> Encode.Value
 encodeSummary summary =
-  Encode.object
-    [ ("output", Encode.string summary.output)
-    , ("passed", Encode.int summary.passed)
-    , ("failed", Encode.int summary.failed)
-    , ("screenshots", Encode.list <| List.map Encode.string summary.screenshots)
-    ]
+    Encode.object
+        [ ( "output", Encode.string summary.output )
+        , ( "passed", Encode.int summary.passed )
+        , ( "failed", Encode.int summary.failed )
+        , ( "screenshots", Encode.list <| List.map Encode.string summary.screenshots )
+        ]
 
 
 type alias SingleRun =
@@ -168,6 +179,7 @@ type Run
 by name:
 
     - filter: A string to match against the run name. Only matching runs will execute.
+
 -}
 type alias Flags =
     { filter : Maybe String
@@ -185,7 +197,8 @@ type alias WebdriverRunner =
 run : ExternalEmitter -> Options -> Run -> WebdriverRunner
 run emitter options steps =
     let
-        emit = toPort >> emitter
+        emit =
+            toPort >> emitter
     in
         Platform.programWithFlags
             { init = begin emit options steps
@@ -197,6 +210,7 @@ run emitter options steps =
 {-| Describes with a name a list of steps to be executed
 
     describe "Login smoke test" [...]
+
 -}
 describe : String -> SingleRun -> Run
 describe name list =
@@ -209,6 +223,7 @@ describe name list =
         [ describe "Login Tests" [...]
         , describe "Signup Tests" [...]
         ]
+
 -}
 group : String -> List Run -> Run
 group name list =
@@ -229,6 +244,7 @@ type Msg
 {-| Creates a new empty Model.
 
     initModel browserOptions (describe "All Tests" [...])
+
 -}
 initModel : Options -> Run -> Model
 initModel options runs =
@@ -262,6 +278,7 @@ a Run suite. This is usually the function you will call to feed your
 main program.
 
     begin flags browserOptions (describe "All Tests" [...])
+
 -}
 begin : InternalEmitter -> Options -> Run -> Flags -> ( Model, Cmd Msg )
 begin emit options steps flags =

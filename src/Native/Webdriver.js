@@ -1,4 +1,4 @@
-var _nomalab$elm_webdriver$Native_Webdriver = function() {
+var _lorenzo$elm_webdriver$Native_Webdriver = function() {
   var path = require('path');
   var fs = require('fs');
   var webdriverio = requireWebdriverio(process.cwd());
