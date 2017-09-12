@@ -317,7 +317,7 @@ visible : String -> Webdriver.Step.Step
 
 Asserts that an element to be visible anywhere in the page. Only one element may be matched by the selector.
 
-   visible "#username"
+    enabled "#username"
 
 ---
 ```elm
@@ -326,7 +326,7 @@ visibleWithinViewport : String -> Webdriver.Step.Step
 
 Asserts that an element to be visible within the viewport. Only one element may be matched by the selector.
 
-    visibleWithinViewport "#username"
+    enabled "#username"
 
 ---
 
@@ -403,7 +403,7 @@ Asserts the result of executing a list of LowLevel Webdriver task. This allows y
 custom sequences of tasks to be executed directly in the webdriver, maybe after getting
 values from other tasks.
 
-    sequenceCommands "Custom cookie check"
+    driverCommand "Custom cookie check"
         [Wd.getCookie "user", Wd.getCookie "legacy_user"]
         (Maybe.oneOf >> Maybe.map (Expec.equal "2) >> Maybe.withDefault (Expect.fail "Cookie is missing"))
 
@@ -808,8 +808,8 @@ triggerClick : String -> Webdriver.Step
 ```
 
 Programatically trigger a click in the elements specified in the selector.
-This exists because some pages hijack mouse clicks in an odd way and, in order to test
-their behavior, mouse clicks must be triggered manually.
+This exists because some pages hijack in an odd way mouse click, and in order to test
+the behavior, it needs to be manually triggered.
 
 ---
 

@@ -17,14 +17,11 @@ Elm project, where the `elm-package.json` file is:
 npm install elm-webdriver
 ```
 
-You are now ready to copy some skeleton tests into your project folder:
+You are now ready to copy some skeleton tests into your project folder. The the files from
+[the templates folder](https://github.com/lorenzo/elm-webdriver/tree/master/templates) and
+copy them to your `tests` folder in your project.
 
-```sh
-node_modules/.bin/elm-webdriver init
-```
-
-This will create a new folder `webdriver-tests`. Change to that folder, where you will see a `Main.elm`
-and a `Tests.elm` file. You can add your tests to `Tests.elm` without having to touch anything else!
+Edit `Main.elm` so it looks similar to the [example file](https://github.com/lorenzo/elm-webdriver/blob/master/example/Main.elm)
 
 If you need to use modules from your project, make sure you also add all the dependencies from the main
 `elm-package.json` into `webdriver-tests/elm-package.json`. Remember to keep those in sync.
