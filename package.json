@@ -1,6 +1,6 @@
 {
   "name": "elm-webdriver",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Elm bridge for Webdriver.io and testing utilities",
   "main": "index.js",
   "engines": {
@@ -24,6 +24,9 @@
   },
   "files": [
     "bin",
+    "src",
+    "templates",
+    "elm-package.json",
     "Readme.md",
     "Api.md"
   ],
