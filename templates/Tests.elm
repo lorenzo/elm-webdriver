@@ -25,7 +25,7 @@ searchElm =
         , setValue "input[name='q']" "Elm lang"
         , waitForExist firstLink 2000
         , elementText firstLink <| Expect.equal "Elm"
-        , click firstLink_
+        , click firstLink
         , pause 1000 |> withScreenshot True
         , title <| Expect.equal "home"
         ]
