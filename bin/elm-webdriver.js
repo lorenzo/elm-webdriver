@@ -12,6 +12,7 @@ var sanitize = require('sanitize-filename');
 var mkdirp = require('mkdirp');
 var cnst = require('constants');
 var uuid = require('uuid');
+var copydir = require('copy-dir')
 
 var moduleRoot = path.resolve(__dirname, '..')
 
@@ -50,6 +51,17 @@ if (args.help) {
 
 // Seriously, you need to specify which file to test
 var testFile = args._[0]
+
+if (testFile == 'init') {
+	var targetDir = 'tests';
+	if (1 in args._) {
+		targetDir = args._[1];
+	}
+	var templates = path.join(moduleRoot, '/templates');
+	fs.mkdirSync(targetDir)
+	copydir.sync(templates, targetDir);
+	process.exit(0)
+}
 
 if (!testFile) {
   testFile = 'Main.elm'
